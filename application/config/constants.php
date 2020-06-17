@@ -83,3 +83,55 @@ defined('EXIT_USER_INPUT')     OR define('EXIT_USER_INPUT', 7); // invalid user 
 defined('EXIT_DATABASE')       OR define('EXIT_DATABASE', 8); // database error
 defined('EXIT__AUTO_MIN')      OR define('EXIT__AUTO_MIN', 9); // lowest automatically-assigned error code
 defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest automatically-assigned error code
+
+
+/* -------------------------------------------------------------------------------------------------------
+| Custom defined constants for the application
+*/
+
+defined('SETTINGS_TABLE_NAME') OR define ('SETTINGS_TABLE_NAME', 'settings');
+defined('BLOG_TABLE_NAME') OR define ('BLOG_TABLE_NAME', 'blog');
+defined('USER_TABLE_NAME') OR define ('USER_TABLE_NAME', 'user_login');
+defined('ALLOWED_FILE_TYPES') OR define ('ALLOWED_FILE_TYPES', 'gif|jpg|png|jpeg');
+defined('PICTURES_UPLOAD_LOCATION') OR define ('PICTURES_UPLOAD_LOCATION', '../uploads/blogPics/');
+defined('HOTEL_INFO_ENDPOINT') OR define ('HOTEL_INFO_ENDPOINT', 'http://json.peakview.bg/b2b_programa_hotel.php?');
+defined('AUTHENTICATION_KEY') OR define ('AUTHENTICATION_KEY', '&us=e35232bd48c2e3e80eee63ebb0aee9a7o40Qjze9Ri&ps=JBPmBtdkFZxPW72e35232bd48c2e3e80eee63ebb0aee9a7');
+defined('DEFAULT_UPLOAD_FILE_NAME') OR define ('DEFAULT_UPLOAD_FILE_NAME', 'file');
+
+defined('USE_SESSION') OR define ('USE_SESSION', false);
+defined('BAD_REQUEST_ERROR_CODE') OR define ('BAD_REQUEST_ERROR_CODE', 403);
+defined('UNSUCCESSFUL_REQUEST_ERROR_CODE') OR define ('UNSUCCESSFUL_REQUEST_ERROR_CODE', 404);
+defined('SUCCESSFUL_REQUEST_ERROR_CODE') OR define ('SUCCESSFUL_REQUEST_ERROR_CODE', 200);
+defined('DEFAULT_GET_REQUEST_OFFSET') OR define ('DEFAULT_GET_REQUEST_OFFSET', 0);
+defined('DEFAULT_GET_REQUEST_LIMIT') OR define ('DEFAULT_GET_REQUEST_LIMIT', 50);
+defined('DEFAULT_PID') OR define ('DEFAULT_PID', -1);
+
+
+defined('ERROR_OCCURRED_MESSAGE') OR define ('ERROR_OCCURRED_MESSAGE', 'Error ocurred');
+defined('METHOD_CHECK_SUFFIX_MESSAGE') OR define ('METHOD_CHECK_SUFFIX_MESSAGE', ' method should be used');
+defined('NOT_JSON_ERROR') OR define ('NOT_JSON_ERROR', 'Data must be in json format');
+defined('PROPERTY_NOT_SET_SUFFIX_MESSAGE') OR define ('PROPERTY_NOT_SET_SUFFIX_MESSAGE', ' is not provided or is incorrect');
+defined('INSERT_FAILED_MESSAGE') OR define ('INSERT_FAILED_MESSAGE', 'Insert operation failed');
+defined('INSERT_SUCCESSFUL_MESSAGE') OR define ('INSERT_SUCCESSFUL_MESSAGE', 'Insert operation successful');
+defined('UPDATE_SUCCESSFUL_MESSAGE') OR define ('UPDATE_SUCCESSFUL_MESSAGE', 'Update operation successful');
+defined('DELETE_SUCCESSFUL_MESSAGE') OR define ('DELETE_SUCCESSFUL_MESSAGE', 'Delete operation successful');
+defined('UPDATE_FAILED_MESSAGE') OR define ('UPDATE_FAILED_MESSAGE', 'Update operation failed');
+defined('DELETE_FAILED_MESSAGE') OR define ('DELETE_FAILED_MESSAGE', 'Delete operation failed');
+defined('EMAIL_NOT_VALID_MESSAGE') OR define ('EMAIL_NOT_VALID_MESSAGE', 'Email is not valid!');
+defined('FILE_UPLOAD_ERROR_MESSAGE') OR define ('FILE_UPLOAD_ERROR_MESSAGE', 'File upload failed');
+defined('SESSION_NOT_SET_MESSAGE') OR define ('SESSION_NOT_SET_MESSAGE', 'Session not set');
+defined('PID_NOT_PROVIDED_MESSAGE') OR define ('PID_NOT_PROVIDED_MESSAGE', 'Pid not provided');
+defined('HOTELID_NOT_PROVIDED_MESSAGE') OR define ('HOTELID_NOT_PROVIDED_MESSAGE', 'Hotel ID is not provided');
+defined('USER_NOT_FOUND_MESSAGE') OR define ('USER_NOT_FOUND_MESSAGE', 'User not found');
+defined('INVALID_PASSWORD_MESSAGE') OR define ('INVALID_PASSWORD_MESSAGE', 'Invalid password');
+defined('VALIDATION_ERROR_MESSAGE') OR define ('VALIDATION_ERROR_MESSAGE', 'Validation of input failed');
+defined('USERNAME_TAKEN_MESSAGE') OR define ('USERNAME_TAKEN_MESSAGE', 'Username taken');
+defined('USER_NOT_FOUND') OR define ('USER_NOT_FOUND', 'User not found');
+defined('SESSION_EXPIRED_MESSAGE') OR define ('SESSION_EXPIRED_MESSAGE', 'Session expired');
+
+
+
+defined('XML_SAVE_PATH') OR define ('XML_SAVE_PATH', '/file/path/name.xml');
+
+
+
