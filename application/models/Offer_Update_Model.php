@@ -9,42 +9,37 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Offer_Update_Model extends Basic_Model{
-    
-
     /**
      * Overrides the method of the ancestor
      * Inserts a tuple in the clients table
      */
 
-    private $production = true;
-    private $datesFormat = 'Y-m-d';
-    private $fetchAdditionalDetails = true;
-    private $turoperatorsTable = 'turoperators';
-    private $MAX_OFFERS_FOR_SINGLE_TUROPERATOR = 700;
-    private $MAX_OFFERS_FOR_SINGLE_BATCH = 300;
-    private $thirdPartyBaseUrl;
-    private $thirdPartyCredentials;
-    public $holidaysDetailsEndpointName = "b2b_programa_pochivka.php";
-    public $excursionsDetailsEndpointName = "b2b_programa_ekskurzia.php";
-
     public function __construct()
     {
         parent::__construct();
-        if($this->production){
-            $this->thirdPartyBaseUrl = "http://json.peakview.bg/";
-            $this->thirdPartyCredentials = "us=e35232bd48c2e3e80eee63ebb0aee9a7o40Qjze9Ri&ps=JBPmBtdkFZxPW72e35232bd48c2e3e80eee63ebb0aee9a7";
-        
-        }else{
-            $this->thirdPartyBaseUrl = "http://demojson.peakview.bg/";
-            $this->thirdPartyCredentials = "us=APIUSER&ps=APIKEY";
-        }
+        $this->getThirdPartyAccessInfo();
     }
 
-    private function truncateDynamicTables()
+    public function updateAction($fetchAdditionalDetails)
     {
-        $this->db->empty_table($this->offersTableToUpdate);
-        $this->db->empty_table($this->datesForOffersTableToUpdate);
-        $this->db->empty_table($this->hotelsForOffersTableToUpdate);
+        $this->fetchAdditionalDetails = $fetchAdditionalDetails;
+        if($fetchAdditionalDetails && $this->shouldRunDetailedUpdate()){
+            $offersForUpdate = $this->getOffersForDetailedUpdate();
+            $areAllOffersUpdated = empty($offersForUpdate);
+            if($areAllOffersUpdated){
+                $isAnyAdditionalTableUpdated = $this->updateAdditionalTables();
+                if(!$isAnyAdditionalTableUpdated){
+                    $this->switchReadAndUpdateTables();
+                    $this->updateLastTablesUpdateDateSetting(date(DATE_FORMAT, now('Europe/Sofia')));
+                } 
+            }else{
+                $this->updateOfferWithDetails($offersForUpdate);
+            }
+        }else{ 
+            $this->truncateDynamicTables();
+            $turoperatorsArray = $this->getTuroperatorsArray();
+            $this->insertBasicOfferInfo($turoperatorsArray);
+        }
     }
 
     public function updateTuroperatorsTable(){
@@ -53,7 +48,7 @@ class Offer_Update_Model extends Basic_Model{
             $insertData = array();
             $insertData['TUROPERATOR_ID']= $singleTuroperatorInfo['TUROPERATOR_ID'];
             $insertData['name']= $singleTuroperatorInfo['TUROPERATOR'];
-            parent::insert($this->turoperatorsTable, $insertData);
+            parent::insert(TUROPERATORS_TABLE_NAME, $insertData);
         }
     }
     
@@ -65,154 +60,15 @@ class Offer_Update_Model extends Basic_Model{
         return $turoperatorsArray;
     }
     
-    private function getInsertData($baseDataArray, $detailsArray, $fetchAdditionalDetails, $isHoliday)
-    {
-        $dataToInsert = array();
-        $dataToInsert['isHoliday'] = $isHoliday ? 1 : 0;
-        if(array_key_exists('PID', $baseDataArray)){
-            $dataToInsert['pid'] = $baseDataArray['PID'];
+   
+    
+    public function processAdditionalOfferData($rawData, &$remappedData){
+        $remappedData['isDetailUpdated'] = true;
+        if($rawData != null){
+            $remappedData = array_merge($remappedData, $this->remapOrdinaryKeys($rawData, THIRD_PARTY_ADDITIONAL_KEYS_MAP));
+            $remappedData = array_merge($remappedData, $this->remapImageKeys($rawData, THIRD_PARTY_ADDITIONAL_IMAGE_KEYS_MAP));
+            $remappedData = array_merge($remappedData, $this->remapJsonKeys($rawData, THIRD_PARTY_ADDITIONAL_JSON_KEYS_MAP));
         }
-        if(array_key_exists('TUROPERATOR_ID', $baseDataArray)){
-            $dataToInsert['turoperator_id'] = $baseDataArray['TUROPERATOR_ID'];
-        }
-        if(array_key_exists('TUROPERATOR', $baseDataArray)){
-            $dataToInsert['turoperator_name'] = $baseDataArray['TUROPERATOR'];
-        }
-        if(array_key_exists('COUNTRY', $baseDataArray)){
-            $dataToInsert['country'] = $baseDataArray['COUNTRY'];
-        }
-        if(array_key_exists('title', $baseDataArray)){
-            $dataToInsert['title'] = $baseDataArray['title'];
-        }
-        if(array_key_exists('spoDetailsDates', $baseDataArray)){
-            $dataToInsert['dates'] = $baseDataArray['spoDetailsDates'];
-        }
-        if(array_key_exists('MINPRICE', $baseDataArray)){
-            $dataToInsert['min_price'] = $baseDataArray['MINPRICE'];
-        }
-        if(array_key_exists('tragvane_ot', $baseDataArray)){
-            $dataToInsert['departure_place'] = $baseDataArray['tragvane_ot'];
-        }
-        if(array_key_exists('broj_dni', $baseDataArray)){
-            $dataToInsert['number_of_days'] = $baseDataArray['broj_dni'];
-        }
-        if(array_key_exists('broj_noshtuvki', $baseDataArray)){
-            $dataToInsert['number_of_nights'] = $baseDataArray['broj_noshtuvki'];
-        }
-        if(array_key_exists('IMG', $baseDataArray)){
-            $dataToInsert['main_image'] = preg_replace("/^http:/i", "https:", $baseDataArray['IMG']);
-        }
-        if(array_key_exists('BIG_IMG', $baseDataArray)){
-            $dataToInsert['main_image_big'] = preg_replace("/^http:/i", "https:", $baseDataArray['BIG_IMG']);
-        }
-
-        $dataToInsert['isDetailUpdated'] = false;
-
-        if($fetchAdditionalDetails){
-            $this->processAdditionalOfferData($detailsArray, $dataToInsert);
-        }
-      
-        return $dataToInsert;
-    }
-
-    public function processAdditionalOfferData($detailsArray, &$resultArray){
-        $resultArray['isDetailUpdated'] = true;
-        if($detailsArray != null){
-              // if(array_key_exists('POCHIVKA', $detailsArray)){
-            //     $dataToInsert['isHoliday'] = $detailsArray['POCHIVKA'];
-            // }
-            
-            
-            if(array_key_exists('STATUS', $detailsArray)){
-                $resultArray['isActive'] = $detailsArray['STATUS'];
-            }
-            if(array_key_exists('transport_text', $detailsArray)){
-                $resultArray['transport_type'] = $detailsArray['transport_text'];
-            }
-            if(array_key_exists('valuta', $detailsArray)){
-                $resultArray['currency'] = $detailsArray['valuta'];
-            }
-            if(array_key_exists('opisanie', $detailsArray)){
-                $resultArray['description'] = $detailsArray['opisanie'];
-            }
-            if(array_key_exists('opisanie_clean', $detailsArray)){
-                $resultArray['description_clean'] = $detailsArray['opisanie_clean'];
-            }
-            if(array_key_exists('CENATA_VKLYUCHVA', $detailsArray)){
-                $resultArray['price_includes'] = $detailsArray['CENATA_VKLYUCHVA'];
-            }
-            if(array_key_exists('CENATA_NE_VKLYUCHVA', $detailsArray)){
-                $resultArray['price_not_includes'] = $detailsArray['CENATA_NE_VKLYUCHVA'];
-            }
-            if(array_key_exists('oferta_file', $detailsArray)){
-                $resultArray['file'] = $detailsArray['oferta_file'];
-            }
-            if(array_key_exists('IMG2', $detailsArray)){
-                $resultArray['image2'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG2']);
-            }
-            if(array_key_exists('BIG_IMG2', $detailsArray)){
-                $resultArray['image2_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG2']);
-            }
-            if(array_key_exists('IMG3', $detailsArray)){
-                $resultArray['image3'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG3']);
-            }
-            if(array_key_exists('BIG_IMG3', $detailsArray)){
-                $resultArray['image3_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG3']);
-            }
-            if(array_key_exists('IMG4', $detailsArray)){
-                $resultArray['image4'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG4']);
-            }
-            if(array_key_exists('BIG_IMG4', $detailsArray)){
-                $resultArray['image4_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG4']);
-            }
-            if(array_key_exists('IMG5', $detailsArray)){
-                $resultArray['image5'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG5']);
-            }
-            if(array_key_exists('BIG_IMG5', $detailsArray)){
-                $resultArray['image5_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG5']);
-            }
-            if(array_key_exists('IMG6', $detailsArray)){
-                $resultArray['image6'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG6']);
-            }
-            if(array_key_exists('BIG_IMG6', $detailsArray)){
-                $resultArray['image6_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG6']);
-            }
-            if(array_key_exists('IMG7', $detailsArray)){
-                $resultArray['image7'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG7']);
-            }
-            if(array_key_exists('BIG_IMG7', $detailsArray)){
-                $resultArray['image7_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG7']);
-            }
-            if(array_key_exists('IMG8', $detailsArray)){
-                $resultArray['image8'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG8']);
-            }
-            if(array_key_exists('BIG_IMG8', $detailsArray)){
-                $resultArray['image8_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG8']);
-            }
-            if(array_key_exists('IMG9', $detailsArray)){
-                $resultArray['image9'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG9']);
-            }
-            if(array_key_exists('BIG_IMG9', $detailsArray)){
-                $resultArray['image9_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG9']);
-            }
-            if(array_key_exists('IMG10', $detailsArray)){
-                $resultArray['image10'] =  preg_replace("/^http:/i", "https:", $detailsArray['IMG10']);
-            }
-            if(array_key_exists('BIG_IMG10', $detailsArray)){
-                $resultArray['image10_big'] =  preg_replace("/^http:/i", "https:", $detailsArray['BIG_IMG10']);
-            }
-            if(array_key_exists('UPDATEID', $detailsArray)){
-                $resultArray['last_updated'] = $detailsArray['UPDATEID'];
-            }
-            if(array_key_exists('dates', $detailsArray)){
-                $resultArray['dates_json'] = json_encode($detailsArray['dates']);
-            }
-            if(array_key_exists('hotelsdata', $detailsArray)){
-                 $resultArray['hotelsdata_json'] = json_encode($detailsArray['hotelsdata']);
-            }
-              
-        }
-        
     }
 
     public function updateHotelsForOffers($hotelsForOffersJson, $pid, $table){
@@ -222,44 +78,12 @@ class Offer_Update_Model extends Basic_Model{
             foreach($hotelsForOffersArray as $singleTuple)
             {
                 if(is_array($singleTuple)){
-                    $hotelsDataToInsert = array();
+                    $hotelsDataToInsert =  $this->remapOrdinaryKeys($singleTuple, THIRD_PARTY_HOTEL_KEYS_MAP);
                     $hotelsDataToInsert['offer_pid '] = $pid;
-                    if(array_key_exists('hotel_id', $singleTuple)){
-                        $hotelsDataToInsert['hotel_id'] = $singleTuple['hotel_id'];
-                    }
-                    if(array_key_exists('hotel_name', $singleTuple)){
-                        $hotelsDataToInsert['hotel_name'] = $singleTuple['hotel_name'];
-                    }
-                    if(array_key_exists('hotel_place', $singleTuple)){
-                        $hotelsDataToInsert['hotel_place'] = $singleTuple['hotel_place'];
-                    }
-                    if(array_key_exists('hotel_small_img', $singleTuple)){
-                        $hotelsDataToInsert['hotel_image'] = $singleTuple['hotel_small_img'];
-                    }
-                    if(array_key_exists('hotel_big_img', $singleTuple)){
-                        $hotelsDataToInsert['hotel_big_image'] = $singleTuple['hotel_big_img'];
-                    }
-                    if(array_key_exists('hotel_cena_ot', $singleTuple)){
-                        $hotelsDataToInsert['hotel_min_price'] = $singleTuple['hotel_cena_ot'];
-                    }
-                    if(array_key_exists('hotel_valuta', $singleTuple)){
-                        $hotelsDataToInsert['currency'] = $singleTuple['hotel_valuta'];
-                    }
-                    
-                    parent::insert($this->hotelsForOffersTableToUpdate, $hotelsDataToInsert);
+                    parent::insert($this->updateHotelsForOffersTable, $hotelsDataToInsert);
                 }       
             }  
         }
-    }
-
-    private function switchReadAndUpdateTables()
-    {
-        $this->db->update($this->settingsTable, array('setting_value' => $this->offersTableToUpdate), array('setting_name' => 'offersTableToRead'));
-        $this->db->update($this->settingsTable, array('setting_value' => $this->offersTableToRead), array('setting_name' => 'offersTableToUpdate'));
-        $this->db->update($this->settingsTable, array('setting_value' => $this->datesForOffersTableToUpdate), array('setting_name' => 'datesForOffersTableToRead'));
-        $this->db->update($this->settingsTable, array('setting_value' => $this->datesForOffersTableToRead), array('setting_name' => 'datesForOffersTableToUpdate'));
-        $this->db->update($this->settingsTable, array('setting_value' => $this->hotelsForOffersTableToUpdate), array('setting_name' => 'hotelsForOffersTableToRead'));
-        $this->db->update($this->settingsTable, array('setting_value' => $this->hotelsForOffersTableToRead), array('setting_name' => 'hotelsForOffersTableToUpdate'));
     }
 
     public function getAdditionalDetailsArray($fetchAdditionalDetails, $offerPID, $offerDetailsEnpointName)
@@ -273,7 +97,6 @@ class Offer_Update_Model extends Basic_Model{
                                 $offerPID.
                                 "&". 
                                 $this->thirdPartyCredentials;
-            //$this->output->enable_profiler(TRUE);
             $offerDetailsJson = file_get_contents($offerDetailsInfoUrl);
             $offerDetailsArray = json_decode($offerDetailsJson, true);
             
@@ -284,26 +107,29 @@ class Offer_Update_Model extends Basic_Model{
         return $offerDetailsArray;
     }
 
-    private function insertIntoOffersTable($offerBaseInfoUrl, $offerDetailsEnpointName, $isHoliday = false)
-    {
-        set_time_limit(0);
-        $offersForTuroperatorJson = file_get_contents($offerBaseInfoUrl);
-        $offersForTuropatorArray = json_decode($offersForTuroperatorJson, true);
-        $fetchAdditionalDetails = $this->fetchAdditionalDetails;
-        
-        if($offersForTuropatorArray == null){
-            return;
+    public function updateAdditionalTables(){
+        $query = $this->db->select('offer_id, pid, number_of_days, isHoliday, dates_json, hotelsdata_json')
+                          ->where('areAdditionalTablesUpdated', false)
+                          ->limit($this->MAX_OFFERS_FOR_SINGLE_BATCH)
+                          ->get($this->updateOffersTable);
+        $result = false;
+        if($query->num_rows()>0){
+            foreach ($query->result_array() as $row)
+            {   
+                if(array_key_exists("dates_json", $row) ){
+                    $this->updateDates($row['pid'], $row["dates_json"], $row['number_of_days'], $this->fetchAdditionalDetails, $row['isHoliday'], $this->updateDatesForOffersTable);
+                }
+                if($row['isHoliday'] && array_key_exists("hotelsdata_json", $row)){
+                    $this->updateHotelsForOffers($row["hotelsdata_json"], $row['pid'], $this->updateHotelsForOffersTable);
+                }
+                $this->markAdditionalTablesUpdatedForOffer($row['offer_id']);
+            }
+            $result = true;
         }
-        foreach($offersForTuropatorArray as $singleOffer)
-        {   
-            $offerDetailsArray = $this->getAdditionalDetailsArray($fetchAdditionalDetails, $singleOffer["PID"], $offerDetailsEnpointName);
-            $dataToInsert = $this->getInsertData($singleOffer, $offerDetailsArray, $fetchAdditionalDetails, $isHoliday);
-            parent::insert($this->offersTableToUpdate, $dataToInsert);
-        }
+        return $result;
     }
 
     public function updateDates($pid, $dates, $daysToAdd, $isDatesJsonAvailable, $isHoliday, $table){
-        set_time_limit(0);
         $datesArray = json_decode($dates, true);
         if($isDatesJsonAvailable && $datesArray == null)
         {
@@ -322,6 +148,37 @@ class Offer_Update_Model extends Basic_Model{
         }
     }
 
+    private $fetchAdditionalDetails = true;
+    private $MAX_OFFERS_FOR_SINGLE_BATCH = MAX_OFFERS_FOR_SINGLE_BATCH;
+    private $thirdPartyBaseUrl;
+    private $thirdPartyCredentials;
+
+    private function switchReadAndUpdateTables()
+    {
+        $this->db->update(SETTINGS_TABLE_NAME, array('setting_value' => $this->updateOffersTable), array('setting_name' => 'offersTableToRead'));
+        $this->db->update(SETTINGS_TABLE_NAME, array('setting_value' => $this->readOffersTable), array('setting_name' => 'offersTableToUpdate'));
+        $this->db->update(SETTINGS_TABLE_NAME, array('setting_value' => $this->updateDatesForOffersTable), array('setting_name' => 'datesForOffersTableToRead'));
+        $this->db->update(SETTINGS_TABLE_NAME, array('setting_value' => $this->readDatesForOffersTable), array('setting_name' => 'datesForOffersTableToUpdate'));
+        $this->db->update(SETTINGS_TABLE_NAME, array('setting_value' => $this->updateHotelsForOffersTable), array('setting_name' => 'hotelsForOffersTableToRead'));
+        $this->db->update(SETTINGS_TABLE_NAME, array('setting_value' => $this->readHotelsForOffersTable), array('setting_name' => 'hotelsForOffersTableToUpdate'));
+    }
+
+    private function insertIntoOffersTable($offerBaseInfoUrl, $offerDetailsEnpointName, $isHoliday = false)
+    {
+        $offersForTuroperatorJson = file_get_contents($offerBaseInfoUrl);
+        $offersForTuropatorArray = json_decode($offersForTuroperatorJson, true);
+        $fetchAdditionalDetails = $this->fetchAdditionalDetails;
+        
+        if($offersForTuropatorArray == null){
+            return;
+        }
+        foreach($offersForTuropatorArray as $singleOffer)
+        {   
+            $offerDetailsArray = $this->getAdditionalDetailsArray($fetchAdditionalDetails, $singleOffer["PID"], $offerDetailsEnpointName);
+            $dataToInsert = $this->getOfferInsertData($singleOffer, $offerDetailsArray, $fetchAdditionalDetails, $isHoliday);
+            parent::insert($this->updateOffersTable, $dataToInsert);
+        }
+    }
 
     private function getDatesDataToInsert($pid, $singleTuple, $daysToAdd, $isHoliday, $fetchAdditionalDetails)
     {
@@ -329,45 +186,43 @@ class Offer_Update_Model extends Basic_Model{
         $dataToInsert['offer_pid'] = $pid;
         $dataToInsert['isHoliday'] = $isHoliday;
         if($fetchAdditionalDetails){
-            $dataToInsert['date_start'] = date($this->datesFormat, strtotime($singleTuple['data']));
+            $dataToInsert['date_start'] = date(DATE_FORMAT, strtotime($singleTuple['data']));
             $dataToInsert['date_min_price'] = $singleTuple['data_price'];
             $dataToInsert['date_currency'] = $singleTuple['data_valuta'];
-	        $dataToInsert['date_end'] = date($this->datesFormat,strtotime($singleTuple['data'] . ' + '.$daysToAdd.' days'));
+	        $dataToInsert['date_end'] = date(DATE_FORMAT,strtotime($singleTuple['data'] . ' + '.$daysToAdd.' days'));
         }else{
-            $dataToInsert['date_start'] = date($this->datesFormat, strtotime($singleTuple));
-            $dataToInsert['date_end'] = date($this->datesFormat, strtotime($singleTuple . ' + '.$daysToAdd.' days'));
+            $dataToInsert['date_start'] = date(DATE_FORMAT, strtotime($singleTuple));
+            $dataToInsert['date_end'] = date(DATE_FORMAT, strtotime($singleTuple . ' + '.$daysToAdd.' days'));
         }
         return $dataToInsert;
     }
 
     private function insertExcursions($turoperatorId/*, &$shouldStopCounter, &$offersInsertedCounter*/)
     {
-        set_time_limit(0);
         $getExcursionsForTuroperatorUrl = $this->thirdPartyBaseUrl . 
-                                        "b2b_programi_list_ekskurzii.php?".
+                                        EXCURSIONS_LIST . "?" .
                                         $this->thirdPartyCredentials .
                                         "&Turoperator_ID=" . 
                                         $turoperatorId; 
         $isHoliday = false;
-        $this->insertIntoOffersTable($getExcursionsForTuroperatorUrl, $this->excursionsDetailsEndpointName/*, $shouldStopCounter*/, $isHoliday);
+        $this->insertIntoOffersTable($getExcursionsForTuroperatorUrl, EXCURSIONS_DETAIL_ENDOPOINT/*, $shouldStopCounter*/, $isHoliday);
     }
 
     private function insertHolidays($turoperatorId/*, &$shouldStopCounter, &$offersInsertedCounter*/)
     {
-        set_time_limit(0);
         $getHolidaysForTuroperatorUrl = $this->thirdPartyBaseUrl . 
-                                        "b2b_programi_list_pochivki.php?".
+                                        HOLIDAYS_LIST . "?".
                                         $this->thirdPartyCredentials .
                                         "&Turoperator_ID=" . 
                                         $turoperatorId;
         $isHoliday = true;
-        $this->insertIntoOffersTable($getHolidaysForTuroperatorUrl, $this->holidaysDetailsEndpointName/*, $shouldStopCounter*/, $isHoliday);
+        $this->insertIntoOffersTable($getHolidaysForTuroperatorUrl, HOLIDAYS_DETAIL_ENDPOINT/*, $shouldStopCounter*/, $isHoliday);
     }
 
     private function shouldRunDetailedUpdate()
     {
-        $lastTablesUpdateDateString = $this->getSettingsTable('lastTablesUpdateDate');
-        return (date($this->datesFormat, strtotime($lastTablesUpdateDateString)) < date($this->datesFormat, now('Europe/Sofia')));
+        $lastTablesUpdateDateString = $this->getSettingValue('lastTablesUpdateDate');
+        return (date(DATE_FORMAT, strtotime($lastTablesUpdateDateString)) < date(DATE_FORMAT, now('Europe/Sofia')));
     }
 
     private function updateLastTablesUpdateDateSetting($valueToSet){
@@ -377,7 +232,7 @@ class Offer_Update_Model extends Basic_Model{
             'setting_value' => $valueToSet
         );
         $this->db->where('setting_name', 'lastTablesUpdateDate');
-        $this->db->update($this->settingsTable, $data);
+        $this->db->update(SETTINGS_TABLE_NAME, $data);
     }
 
     private function getOffersForDetailedUpdate(){
@@ -389,7 +244,7 @@ class Offer_Update_Model extends Basic_Model{
         $query = $this->db->select('offer_id, pid, number_of_days, isHoliday')
                       ->where('isDetailUpdated', false)
                       ->limit($limit)
-                      ->get($this->offersTableToUpdate);
+                      ->get($this->updateOffersTable);
         $result = array();
         if($query->num_rows() > 0){
             foreach ($query->result_array() as $row)
@@ -408,40 +263,36 @@ class Offer_Update_Model extends Basic_Model{
         $this->processAdditionalOfferData($detailsArray, $updateArray);
         
         if($updateArray != null && !empty($updateArray)){
-            parent::update($this->offersTableToUpdate, $offerBasicInfo['offer_id'], $updateArray, "offer_id");
+            parent::update($this->updateOffersTable, $offerBasicInfo['offer_id'], $updateArray, "offer_id");
         }
     }
 
     private function markAdditionalTablesUpdatedForOffer($offer_id){
-        parent::update($this->offersTableToUpdate, $offer_id, array('areAdditionalTablesUpdated'=> true), 'offer_id');
+        parent::update($this->updateOffersTable, $offer_id, array('areAdditionalTablesUpdated'=> true), 'offer_id');
     }
 
-    public function updateAdditionalTables(){
-        $query = $this->db->select('offer_id, pid, number_of_days, isHoliday, dates_json, hotelsdata_json')
-                          ->where('areAdditionalTablesUpdated', false)
-                          ->limit(2*$this->MAX_OFFERS_FOR_SINGLE_BATCH)
-                          ->get($this->offersTableToUpdate);
-        $result = false;
-        if($query->num_rows()>0){
-            foreach ($query->result_array() as $row)
-            {   
-                if(array_key_exists("dates_json", $row) ){
-                    $this->updateDates($row['pid'], $row["dates_json"], $row['number_of_days'], $this->fetchAdditionalDetails, $row['isHoliday'], $this->datesForOffersTableToUpdate);
-                }
-                if($row['isHoliday'] && array_key_exists("hotelsdata_json", $row)){
-                    $this->updateHotelsForOffers($row["hotelsdata_json"], $row['pid'], $this->hotelsForOffersTableToUpdate);
-                }
-                $this->markAdditionalTablesUpdatedForOffer($row['offer_id']);
-            }
-            $result = true;
+    private function getThirdPartyAccessInfo(){
+        if(IS_PRODUCTION){
+            $this->thirdPartyBaseUrl = THIRD_PARTY_URL;
+            $this->thirdPartyCredentials = AUTHENTICATION_KEY;
+        
+        }else{
+            $this->thirdPartyBaseUrl = DEMO_THIRD_PARTY_URL;
+            $this->thirdPartyCredentials = DEMO_AUTHENTICATION_KEY;
         }
-        return $result;
+    }
+
+    private function truncateDynamicTables()
+    {
+        $this->db->empty_table($this->updateOffersTable);
+        $this->db->empty_table($this->updateDatesForOffersTable);
+        $this->db->empty_table($this->updateHotelsForOffersTable);
     }
 
     private function getSupportedTuroperators(){
         $query = $this->db->select('TUROPERATOR_ID')
                  ->where('shouldBeIncluded', true)
-                 ->get($this->turoperatorsTable);
+                 ->get(TUROPERATORS_TABLE_NAME);
         $result = array();
         if($query->num_rows()>0){
             $result = $query->result_array();
@@ -453,7 +304,7 @@ class Offer_Update_Model extends Basic_Model{
         return in_array($turoperatorId, $supportedOperatorsIds[0]);
     }
 
-    private function executeBasicOfferInfoInsertOperation($turoperatorsArray)
+    private function insertBasicOfferInfo($turoperatorsArray)
     {
         foreach($turoperatorsArray as $singleTuroperatorInfo)
         {
@@ -464,36 +315,54 @@ class Offer_Update_Model extends Basic_Model{
         } 
     }
 
-    private function executeDetailedOfferUpdate($offersForUpdate)
+    private function updateOfferWithDetails($offersForUpdate)
     {
         foreach($offersForUpdate as $singleOffer)
         {
-            $offerDetailsEnpointName = $this->excursionsDetailsEndpointName;
-            if($singleOffer['isHoliday']){
-                $offerDetailsEnpointName = $this->holidaysDetailsEndpointName;
-            }   
+            $offerDetailsEnpointName = ($singleOffer['isHoliday'] ?  HOLIDAYS_DETAIL_ENDPOINT :  EXCURSIONS_DETAIL_ENDOPOINT);  
             $this->detailUpdateSingleOffer($offerDetailsEnpointName, $singleOffer);
         }
     }
 
-    public function updateAction($fetchAdditionalDetails)
+    private function getOfferInsertData($rawData, $detailsArray, $fetchAdditionalDetails, $isHoliday)
     {
-        $this->fetchAdditionalDetails = $fetchAdditionalDetails;
-        if(!$fetchAdditionalDetails){
-            $this->truncateDynamicTables();
-            $turoperatorsArray = $this->getTuroperatorsArray();
-            $this->executeBasicOfferInfoInsertOperation($turoperatorsArray);
-        }else if($this->shouldRunDetailedUpdate()){
-            $offersForUpdate = $this->getOffersForDetailedUpdate();
-            if(empty($offersForUpdate)){
-                $allAdditionalTalesUpdated = $this->updateAdditionalTables();
-                if(!$allAdditionalTalesUpdated){
-                    $this->switchReadAndUpdateTables();
-                    $this->updateLastTablesUpdateDateSetting(date($this->datesFormat, now('Europe/Sofia')));
-                } 
-            }else{
-                $this->executeDetailedOfferUpdate($offersForUpdate);
-            }
+        $remappedData = $this->remapOrdinaryKeys($rawData, THIRD_PARTY_BASIC_KEYS_MAP);
+        $remappedData = array_merge($remappedData, $this->remapImageKeys($rawData, THIRD_PARTY_BASIC_IMG_KEYS_MAP));
+        $remappedData['isHoliday'] = $isHoliday;
+        $remappedData['isDetailUpdated'] = false;
+        if($fetchAdditionalDetails){
+            $this->processAdditionalOfferData($detailsArray, $dataToInsert);
         }
+        return $dataToInsert;
+    }
+
+    private function remapOrdinaryKeys($rawData, $map){
+        $remappedData = array();
+        foreach ($map as $key => $value){
+            if(array_key_exists($key, $rawData)){
+                $remappedData[$value] = $rawData[$key];
+            }
+        };
+        return $remappedData;
+    }
+
+    private function remapImageKeys($rawData, $map){
+        $remappedData = array();
+        foreach ($map as $key => $value){
+            if(array_key_exists($key, $rawData)){
+                $dataToInsert[$value] = preg_replace("/^http:/i", "https:", $rawData[$value]);
+            }
+        };
+        return $remappedData;
+    }
+
+    private function remapJsonKeys($rawData, $map){
+        $remappedData = array();
+        foreach ($map as $key => $value){
+            if(array_key_exists($key, $rawData)){
+                $dataToInsert[$value] = json_encode($rawData[$value]);
+            }
+        };
+        return $remappedData;
     }
 }

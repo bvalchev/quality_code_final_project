@@ -92,16 +92,27 @@ defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest auto
 defined('SETTINGS_TABLE_NAME') OR define ('SETTINGS_TABLE_NAME', 'settings');
 defined('BLOG_TABLE_NAME') OR define ('BLOG_TABLE_NAME', 'blog');
 defined('USER_TABLE_NAME') OR define ('USER_TABLE_NAME', 'user_login');
+defined('TUROPERATORS_TABLE_NAME') OR define ('TUROPERATORS_TABLE_NAME', 'turoperators');
 defined('ALLOWED_FILE_TYPES') OR define ('ALLOWED_FILE_TYPES', 'gif|jpg|png|jpeg');
 defined('PICTURES_UPLOAD_LOCATION') OR define ('PICTURES_UPLOAD_LOCATION', '../uploads/blogPics/');
+defined('THIRD_PARTY_URL') OR define ('THIRD_PARTY_URL', 'http://json.peakview.bg/');
+defined('DEMO_THIRD_PARTY_URL') OR define ('DEMO_THIRD_PARTY_URL', 'http://demojson.peakview.bg/');
 defined('HOTEL_INFO_ENDPOINT') OR define ('HOTEL_INFO_ENDPOINT', 'http://json.peakview.bg/b2b_programa_hotel.php?');
 defined('AUTHENTICATION_KEY') OR define ('AUTHENTICATION_KEY', '&us=e35232bd48c2e3e80eee63ebb0aee9a7o40Qjze9Ri&ps=JBPmBtdkFZxPW72e35232bd48c2e3e80eee63ebb0aee9a7');
+defined('DEMO_AUTHENTICATION_KEY') OR define ('DEMO_AUTHENTICATION_KEY', 'us=APIUSER&ps=APIKEY');
 defined('DEFAULT_UPLOAD_FILE_NAME') OR define ('DEFAULT_UPLOAD_FILE_NAME', 'file');
+defined('DATE_FORMAT') OR define ('DATE_FORMAT', 'Y-m-d');
+defined('HOLIDAYS_DETAIL_ENDPOINT') OR define ('HOLIDAYS_DETAIL_ENDPOINT', 'b2b_programa_pochivka.php');
+defined('EXCURSIONS_DETAIL_ENDOPOINT') OR define ('EXCURSIONS_DETAIL_ENDOPOINT', 'b2b_programa_ekskurzia.php');
+defined('EXCURSIONS_LIST') OR define ('EXCURSIONS_LIST', 'b2b_programi_list_ekskurzii.php');
+defined('HOLIDAYS_LIST') OR define ('HOLIDAYS_LIST', 'b2b_programi_list_pochivki.php');
 
+defined('IS_PRODUCTION') OR define ('IS_PRODUCTION', false);
 defined('USE_SESSION') OR define ('USE_SESSION', false);
 defined('BAD_REQUEST_ERROR_CODE') OR define ('BAD_REQUEST_ERROR_CODE', 403);
 defined('UNSUCCESSFUL_REQUEST_ERROR_CODE') OR define ('UNSUCCESSFUL_REQUEST_ERROR_CODE', 404);
 defined('SUCCESSFUL_REQUEST_ERROR_CODE') OR define ('SUCCESSFUL_REQUEST_ERROR_CODE', 200);
+defined('MAX_OFFERS_FOR_SINGLE_BATCH') OR define ('MAX_OFFERS_FOR_SINGLE_BATCH', 300);
 defined('DEFAULT_GET_REQUEST_OFFSET') OR define ('DEFAULT_GET_REQUEST_OFFSET', 0);
 defined('DEFAULT_GET_REQUEST_LIMIT') OR define ('DEFAULT_GET_REQUEST_LIMIT', 50);
 defined('DEFAULT_PID') OR define ('DEFAULT_PID', -1);
@@ -133,5 +144,68 @@ defined('SESSION_EXPIRED_MESSAGE') OR define ('SESSION_EXPIRED_MESSAGE', 'Sessio
 
 defined('XML_SAVE_PATH') OR define ('XML_SAVE_PATH', '/file/path/name.xml');
 
+defined('THIRD_PARTY_BASIC_KEYS_MAP') OR define ('THIRD_PARTY_INTEGRATION_MAP', array(
+	'PID' => 'pid',
+	'TUROPERATOR_ID' => 'turoperator_id',
+	'TUROPERATOR' => 'turoperator_name',
+	'COUNTRY' => 'country',
+	'title' => 'title', 
+	'spoDetailsDates' => 'dates',
+    'MINPRICE' => 'min_price',
+	'tragvane_ot' => 'departure_place',
+	'broj_dni' => 'number_of_days',
+	'broj_noshtuvki' => 'number_of_nights'
+));
 
+defined('THIRD_PARTY_BASIC_IMG_KEYS_MAP') OR define ('THIRD_PARTY_BASIC_IMG_KEYS_REMAP', array(
+	'IMG' => 'main_image', 
+	'BIG_IMG' => 'main_image_big'
+));
 
+defined('THIRD_PARTY_ADDITIONAL_KEYS_MAP') OR define ('THIRD_PARTY_ADDITIONAL_KEYS_MAP', array(
+	'STATUS' => 'isActive',
+	'transport_text' => 'transport_type',
+	'valuta' => 'currency',
+	'opisanie' => 'description',
+	'opisanie_clean' => 'description_clean',
+	'CENATA_VKLYUCHVA' => 'price_includes',
+	'CENATA_NE_VKLYUCHVA' => 'price_not_includes',
+	'oferta_file' => 'file'
+));
+
+defined('THIRD_PARTY_ADDITIONAL_IMAGE_KEYS_MAP') OR define ('THIRD_PARTY_ADDITIONAL_IMAGE_KEYS_MAP', array(
+	'IMG2' => 'image2',
+	'BIG_IMG2' => 'image2_big',
+	'IMG3' => 'image3',
+	'BIG_IMG3' => 'image3_big',
+	'IMG4' => 'image4',
+	'BIG_IMG4' => 'image4_big',
+	'IMG5' => 'image5',
+	'BIG_IMG5' => 'image5_big',
+	'IMG6' => 'image6',
+	'BIG_IMG6' => 'image6_big',
+	'IMG7' => 'image7',
+	'BIG_IMG7' => 'image7_big',
+	'IMG8' => 'image8',
+	'BIG_IMG8' => 'image8_big',
+	'IMG9' => 'image9',
+	'BIG_IMG9' => 'image9_big',
+	'IMG10' => 'image10',
+	'BIG_IMG10' => 'image10_big',
+	'UPDATEID' => 'last_updated'
+));
+
+defined('THIRD_PARTY_ADDITIONAL_JSON_KEYS_MAP') OR define('THIRD_PARTY_ADDITIONAL_JSON_KEYS_MAP', array(
+	'dates' => 'dates_json',
+	'hotelsdata' => 'hotelsdata_json'
+));
+
+defined('THIRD_PARTY_HOTEL_KEYS_MAP') OR define('THIRD_PARTY_HOTEL_KEYS_MAP', array(
+	'hotel_id' => 'hotel_id',
+	'hotel_name' => 'hotel_name',
+	'hotel_place' => 'hotel_place',
+	'hotel_small_img' => 'hotel_image',
+	'hotel_big_img' => 'hotel_big_image',
+	'hotel_cena_ot' => 'hotel_min_price',
+	'hotel_valuta' => 'currency'
+));
