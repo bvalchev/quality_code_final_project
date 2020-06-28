@@ -12,16 +12,11 @@
  */
 
 /**
- * Include the interface from the interface folder
- */
-require_once APPPATH.'interfaces/Authentication_Controller_Interface.php';
-
-/**
  * Class Authentication_Controller
  * The following class inherits Basic_Controller class and is responsible for the handling of authentication of users
  * @Author Boyan Valchev
  */
-class Authentication_Controller extends Basic_Controller implements Authentication_Controller_Interface{
+class Authentication_Controller extends Basic_Controller{
 
     public function __construct()
     {
@@ -37,12 +32,14 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
      * JSON object Parameter 2: password
      * The function sets the session token
      */
-    public function login(){
-        if(!parent::isDesiredMethodUsed('post')){
-            return;
-        };
+    public function login($postParams = null){
+        if(!$postParams){
+            if(!parent::isDesiredMethodUsed('post')){
+                return;
+            };
+            $postParams = file_get_contents('php://input', true);
+        }
 
-        $postParams = file_get_contents('php://input', true);
         if(!$this->isJson($postParams)){
             return;
         }
@@ -50,22 +47,19 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
         $insertTupleData = json_decode($postParams);
         $insertTupleData = parent::sanitizeInput($insertTupleData);
         $username = $insertTupleData->username;
-        $password =  $insertTupleData->password;
+        $password =  $insertTupleData->password ;
 
         if(!$this->Authentication_Model->isUsernameInUse($username)){
-            $this->echoJsonResponse(USER_NOT_FOUND_MESSAGE, BAD_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(USER_NOT_FOUND_MESSAGE, BAD_REQUEST_ERROR_CODE);
         }
         else {
             $userInfo = $this->Authentication_Model->getUser($username);
             $hashedPassword = $userInfo[0]->password;
             if (password_verify($password, $hashedPassword)) {
-                $this->setUserSession($username, $userInfo);
-                return;
+                return $this->setUserSession($username, $userInfo);
             }
             else {
-                $this->echoJsonResponse(INVALID_PASSWORD_MESSAGE, BAD_REQUEST_ERROR_CODE);
-                return;
+                return $this->echoJsonResponse(INVALID_PASSWORD_MESSAGE, BAD_REQUEST_ERROR_CODE);
             }
         }
     }
@@ -79,32 +73,37 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
      * JSON object Parameter 3: position
      * The function inserts the user into the database
      */
-    public function insertUser(){
+    public function insertUser($dataObject = null){
         //Check if user is admin
         /*if(!$this->isAdmin()){
              return;
         }*/
-        if(!$this->isSessionSet() || !parent::isDesiredMethodUsed('post')){
+        if(!$this->isSessionSet()){
             return;
         }
 
-        $dataObject = file_get_contents('php://input', true);
+        if(!$dataObject){
+            if(!parent::isDesiredMethodUsed('post')){
+                return;
+            }
+            $dataObject = file_get_contents('php://input', true);
+        }
+       
         if(!$this->isJson($dataObject)){
             return;
         }
         $insertTupleData = json_decode($dataObject);
         $insertTupleData = parent::sanitizeInput($insertTupleData);
         if(!$this->validateInput($insertTupleData)){
-            $this->echoJsonResponse(VALIDATION_ERROR_MESSAGE, BAD_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(VALIDATION_ERROR_MESSAGE, BAD_REQUEST_ERROR_CODE);
         }
         $insertTupleData->password = $this->encrypt($insertTupleData->password);
+       
         if(!$this->Authentication_Model->isUsernameInUse($insertTupleData->username)) {
-            $this->executeInsertUserOperation($insertTupleData);
+            return $this->executeInsertUserOperation($insertTupleData);
         }
         else{
-            $this->echoJsonResponse(USERNAME_TAKEN_MESSAGE, BAD_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(USERNAME_TAKEN_MESSAGE, BAD_REQUEST_ERROR_CODE);
         }
     }
 
@@ -116,34 +115,36 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
      * JSON object Parameter 2: password
      * JSON object Parameter 3: newPassword
      */
-    public function updatePassword(){
-        if(!$this->isSessionSet() || !parent::isDesiredMethodUsed('post')){
+    public function updatePassword($inputDataObject = null){
+        if(!$this->isSessionSet()){
             return;
         }
-        $inputDataObject = file_get_contents('php://input', true);
+        if(!$inputDataObject){
+            if(!parent::isDesiredMethodUsed('post')){
+                return;
+            }
+            $inputDataObject = file_get_contents('php://input', true);
+
+        }
         if(!$this->isJson($inputDataObject)){
             return;
         }
         $insertTupleData = json_decode($inputDataObject);
         $sanitizedInputData = parent::sanitizeInput($insertTupleData);
         $user = $this->Authentication_Model->getUser($sanitizedInputData->username);
-        if(!empty($user)){
-            $user = $user[0];
-        }else{
-            $this->echoJsonResponse(USER_NOT_FOUND, BAD_REQUEST_ERROR_CODE);
-            return;
+        if(empty($user)){
+            return $this->echoJsonResponse(USER_NOT_FOUND, BAD_REQUEST_ERROR_CODE);
         }
-    
+        $user = $user[0];
+
         if(!password_verify($sanitizedInputData->password, $user->password)){
-            $this->echoJsonResponse(INVALID_PASSWORD_MESSAGE, BAD_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(INVALID_PASSWORD_MESSAGE, BAD_REQUEST_ERROR_CODE);
         }
 
         if(!$this->Authentication_Model->updateUser($user->id, array('password' => $this->encrypt($sanitizedInputData->newPassword)))){
-            $this->echoJsonResponse(UPDATE_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(UPDATE_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
         };
-        $this->logout();
+        return $this->logout();
     }
 
     /**
@@ -152,28 +153,36 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
      * It requires JSON object as DELETE request parameter, containing the following information
      * JSON object Parameter 1: username
      */
-    public function deleteUser(){
-        if(!$this->isSessionSet() || !parent::isDesiredMethodUsed('delete')){
-            return;
-        }
-        $jsonObject = file_get_contents('php://input', true);
-        if(!$this->isJson($jsonObject)) {
-            return;
-        }
-        $userIdObject = json_decode($jsonObject, true);
-        if(!parent::checkIfPropertyIsSet($userIdObject, 'username')){
-            return;
-        }
-        if(!$this->Authentication_Model->isUsernameInUse($userIdObject->username)){
-            $this->echoJsonResponse(USER_NOT_FOUND, BAD_REQUEST_ERROR_CODE);
+    public function deleteUser($jsonObject = null){
+        if(!$this->isSessionSet()){
             return;
         }
 
+        if(!$jsonObject){
+            if( !$this->isDesiredMethodUsed('delete')){
+                return;
+            }
+            $jsonObject = file_get_contents('php://input', true);
+
+        }
+        if(!$this->isJson($jsonObject)) {
+            return;
+        }
+        $userData = json_decode($jsonObject, true);
+
+        $isUsernameProvided = $this->isPropertyInArray($userData, 'username');
+        if(!$isUsernameProvided){
+            return $isUsernameProvided;
+        }
+        if(!$this->Authentication_Model->isUsernameInUse($userData['username'])){
+           return $this->echoJsonResponse(USER_NOT_FOUND, BAD_REQUEST_ERROR_CODE);
+        }
+
         $message = DELETE_SUCCESSFUL_MESSAGE;
-        if(!$this->Authentication_Model->deleteUserByName($userIdObject->username)){
+        if(!$this->Authentication_Model->deleteUserByName($userData['username'])){
             $message = DELETE_FAILED_MESSAGE;
         }
-        $this->echoJsonResponse(DELETE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
+        return $this->echoJsonResponse(DELETE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
     }
 
     /**
@@ -201,11 +210,12 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
      * It unsets the session token.
      */
     public function logout(){
-        $data=array('id' => '', 'username' => '', 'position' => '', 'logged_in' => '');
-        $this->session->unset_userdata($data);
-        $this->session->sess_destroy();
-        $this->echoJsonResponse("Logged out", SUCCESSFUL_REQUEST_ERROR_CODE);
-        return;
+        if(USE_SESSION){
+            $data=array('id' => '', 'username' => '', 'position' => '', 'logged_in' => '');
+            $this->session->unset_userdata($data);
+            $this->session->sess_destroy();
+            return $this->echoJsonResponse(LOGGED_OUT_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
+        }
     }
 
     private function setUserSession($username, $userInfo){
@@ -218,7 +228,7 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
             'logged_in' => TRUE
         );
         $this->session->set_userdata($data);
-        $this->getSessionDetails();
+        return $this->getSessionDetails();
     }
 
     private function isAdmin(){
@@ -229,24 +239,13 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
         return $isAdmin;
     }
 
-    private function isSessionSet(){
-        if(isset($_SESSION['username'])){
-            $isSessionSet = true;
-        }
-        else{
-            $this->echoJsonResponse(SESSION_EXPIRED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
-            $isSessionSet = false;
-        }
-        return $isSessionSet;
-    }
-
     private function hasEditRights($userToEdit){
         $hasEditRights = false;
         if($this->isSessionSet()){
             if($this->isAdmin() || $_SESSION['username'] == $userToEdit){
                 $hasEditRights = true;
             }else{
-                $this->echoJsonResponse("No rights to perform operation", BAD_REQUEST_ERROR_CODE);
+                $this->echoJsonResponse(INVALID_USER_RIGHTS, BAD_REQUEST_ERROR_CODE);
             }
         }
         return $hasEditRights;
@@ -286,6 +285,10 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
 
     private function validateInput($object){
         $inputValid = FALSE;
+        if(!$this->isPropertyInObject($object, 'username') || !$this->isPropertyInObject($object, 'position') || !$this->isPropertyInObject($object, 'password')){
+            return;
+        }
+
         if($this->isUsernameValid($object->username) && $this->isPositionValid($object->position) && $this->isPasswordValid($object->password)){
             $inputValid = TRUE;
         }
@@ -303,12 +306,10 @@ class Authentication_Controller extends Basic_Controller implements Authenticati
 
     private function executeInsertUserOperation($insertTupleData){
         if (!$this->Authentication_Model->insertUser($insertTupleData)) {
-            $this->echoJsonResponse(INSERT_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(INSERT_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
         }
         else{
-            $this->echoJsonResponse(INSERT_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(INSERT_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
         }
     }
 }

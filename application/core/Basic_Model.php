@@ -18,33 +18,26 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Basic_Model extends CI_Model
 {
-    private $table;
+    
     /**
      * Constructor, which calls the constructor of CI_Model
      */
     public function __construct() {
         parent::__construct();
-        $this->offersTableToUpdate = $this->getOffersTableToUpdate();
-        $this->offersTableToRead = $this->getOffersTableToRead();
-        $this->datesForOffersTableToUpdate = $this->getDatesForOffersTableToUpdate();
-        $this->datesForOffersTableToRead = $this->getDatesForOffersTableToRead();
-        $this->hotelsForOffersTableToUpdate = $this->getHotelsForOffersTableToUpdate();
-        $this->hotelsForOffersTableToRead = $this->getHotelsForOffersTableToRead();
+        $this->initializeTableNames();
     }
 
-    private $tableForPicUpdate = 'pictures_optimization';
-    protected $settingsTable = 'settings';
-    protected $offersTableToUpdate;
-    protected $offersTableToRead;
-    protected $datesForOffersTableToUpdate;
-    protected $datesForOffersTableToRead;
-    protected $hotelsForOffersTableToUpdate;
-    protected $hotelsForOffersTableToRead;
+    protected $updateOffersTable;
+    protected $readOffersTable;
+    protected $updateDatesForOffersTable;
+    protected $readDatesForOffersTable;
+    protected $updateHotelsForOffersTable;
+    protected $readHotelsForOffersTable;
 
-    protected function setTable($tableName){
+    protected function setActiveModelTable($tableName){
         $this->table = $tableName;
     }
-    protected function getTable(){
+    protected function getActiveModelTable(){
         return $this->table;
     }
 
@@ -54,7 +47,7 @@ class Basic_Model extends CI_Model
      * @param $data - json or array of the data to be inserted
      * @return $hasAffectedRows
      */
-    protected  function insert($tableName, $data){
+    protected function insert($tableName, $data){
         $this->db->insert($tableName, $data);
         $hasAffectedRows = $this->db->affected_rows()>0;
         return $hasAffectedRows;
@@ -93,47 +86,11 @@ class Basic_Model extends CI_Model
      * @return $hasAffectedRows
      */
     protected function update($tableName, $rowId, $data, $specialPrimaryKey = 'id'){
-
-        /*if($this->isJson($data)){
-            $dataArray = json_decode($data);
-        }else{
-            $dataArray = $data;
-        }*/
-       /* var_dump($data);
-        die();*/
         $this->db->where($specialPrimaryKey, $rowId);
         $this->db->update($tableName, $data);
         $hasAffectedRows = $this->db->affected_rows()>0;
         return $hasAffectedRows;
     }
-
-    /*public function uploadPic($Picture,$id){
-        $this->db->select('*');
-        $this->db->from('user_login');
-        $this->db->where(array('id'=>$id));
-        $this->db->limit(1);
-        $query = $this->db->get();
-        if($query->num_rows()>0){
-            foreach($query->result() as $row) {
-                try{
-                    $this->db->set(array('profile_image'=>$Picture));
-                    $this->db->where(array('id'=>$row->id));
-                    $this->db->update('user_login');
-                }catch(\Exception $e){
-                    die($e->getMessage());
-                }
-
-                if ($this->db->affected_rows() > 0) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
-        else{
-            return false;
-        }
-    }*/
 
     /**
      * The following function is used by other functions to convert query result to JSON object
@@ -161,38 +118,9 @@ class Basic_Model extends CI_Model
      * @param $object - the object for which the check should be performed
      */
     protected function isJson($object) {
-
         json_decode($object);
         return (json_last_error() == JSON_ERROR_NONE);
     }
-
-    /*/**
-     * DEPRECATED
-     * The following function is used by all ancestors to get data from selected table
-     * @param $tableName - the name of the table we want to get all the data from
-     * @param $whereConditionData - conditions we want to have either as an array or in JSON format
-     * @param $limit - number to rows the query should return
-     * @param $offset
-     * @return $hasAffectedRows
-
-    public function getAll($tableName, $whereConditionData ,$limit, $offset){
-        $dataArray = $whereConditionData;
-        if (isset($whereConditionData) && $this->isJson($whereConditionData)){
-            $dataArray = json_decode($whereConditionData);
-        }
-        $query = $this->db->get_where($tableName, $dataArray, $limit, $offset);
-        $this->convertArrayToJson($query);
-    }*/
-
-    private function addAndIfNeeded($query, $shouldAddAnd){
-        $result = $query;
-        if($shouldAddAnd)
-        {
-            $result = $result . " AND ";
-        }
-        return $result;
-    }
-
 
     /**
      * The following function is a base function for getting data from db
@@ -205,90 +133,13 @@ class Basic_Model extends CI_Model
      * @param $sortOrder - ASC or DESC
      * @return json containing the data
      */
-    public function basicGetOperation($tableName, $filterDataAsArray, $arrayForLikeOperator, $limit, $offset, $sortField = null, $sortOrder = null){
-        $shouldAddAnd = false;
-        if($arrayForLikeOperator != []){
-            $this->db->group_start();
-            foreach ($arrayForLikeOperator as $key => $value) {
-                $this->db->or_like($key, $value);
-            }
-            $this->db->group_end();
-        }
-        if($sortField != null){
-            if($sortOrder != null && in_array($sortOrder, array('ASC', 'DESC'))) {
-                $this->db->order_by($sortField, $sortOrder);
-            }else{
-                $this->db->order_by($sortField, 'asc');
-            }
-        }
-        $query = $this->db->get_where($tableName, $filterDataAsArray, $limit, $offset);
-        return $this->convertArrayToJson($query);
-        //mysqli_connect("localhost", "root", '', "terminal");
-        // $query = "SELECT * FROM offers2 WHERE ";
-        //          //JOIN ". $this->datesForOffersTableToRead . " dates ON dates.offer_pid = o.pid 
-        //          //JOIN ". $this->hotelsForOffersTableToRead . " hotels ON hotels.offer_pid = o.pid WHERE ";
-
-        // if($arrayForLikeOperator != []){
-        //     $shouldAddAnd = true;
-        //     $query = $query . " ( ";
-        //     foreach ($arrayForLikeOperator as $key => $value) {
-        //         $query = $query . $key . " LIKE ". $value . " OR ";
-        //     }
-        //     $query = $query . " ) ";
-        // }
-
-        // if(array_key_exists('startDate', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //     $query = $query . " `date_start` = ". date($filterDataAsArray['startDate']). " ";
-        // }
-        // if(array_key_exists('endDate', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //     $query = $query . " date_end = ". date($filterDataAsArray['endDate']). " ";
-        // }
-        // if(array_key_exists('afterDate', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //     $query = $query . " date_start > ". date($filterDataAsArray['afterDate']). " ";
-        // }
-        // if(array_key_exists('beforeDate', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //     $query = $query . " date_end < ". date($filterDataAsArray['beforeDate']). " ";
-        // }
-        // if(array_key_exists('country', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //    // $query = $query . " ( ";
-        //     $query = $query .  " `country` LIKE '%".$filterDataAsArray['country']."%' OR `description` LIKE '%".$filterDataAsArray['country']."%' OR `description_clean` LIKE '%".$filterDataAsArray['country']."%' ";
-        // }
-        // if(array_key_exists('maxPrice', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //     $query = $query . " min_price < ". date($filterDataAsArray['maxPrice']). " ";
-        // }
-        // if(array_key_exists('minPrice', $filterDataAsArray)){
-        //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        //     $shouldAddAnd = true;
-        //     $query = $query . " min_price > ". date($filterDataAsArray['minPrice']). " ";
-        // }
-        // // if($sortField != null){
-        // //     $query = $this->addAndIfNeeded($query, $shouldAddAnd);
-        // //     $shouldAddAnd = true;
-        // //     if($sortOrder != null && in_array($sortOrder, array('ASC', 'DESC'))) {
-        // //         $this->db->order_by($sortField, $sortOrder);
-        // //     }else{
-        // //         $this->db->order_by($sortField, 'asc');
-        // //     }
-        // // }
-        // $udri = $this->db->query($query);
-        // var_dump($query);
-        // var_dump($udri->result());
-        // die();
-        //$query = $this->db->get_where($this->offersTableToRead, $filterDataAsArray, $limit, $offset);
-        return $this->convertArrayToJson($query);
+    protected function executeBasicGetOperation($tableName, $keysForLikeOperator, callable $isSpecialKeyFunction = null){
+        $parameters = new QueryParameters($_GET, $keysForLikeOperator, $isSpecialKeyFunction);
+        $this->addLikeOperatorToQuery($parameters->getLikeOperatorValues());
+        $this->addSortToQuery($parameters->getSortField(), $parameters->getSortOrder());
+        return $this->db->get_where($tableName, $parameters->getNonSpecialRequestParametes(), $parameters->getLimit(), $parameters->getOffset());
     }
+
 
     /**
      * The following function gets tuple by id
@@ -296,51 +147,89 @@ class Basic_Model extends CI_Model
      * @param $id - id of the wanted tuple
      * @return $hasAffectedRows
      */
-    public function getById($tableName, $id){
+    protected function getById($tableName, $id){
         $query = $this->db->get_where($tableName, array('id' => $id));
         $this->convertArrayToJson($query);
     }
 
 
-    public function insertPictureForOptimization( $data){
-        return $this->insert($this->tableForPicUpdate, $data);
-    }
-
-    protected function getSettingsTable($setting_name)
+    protected function getSettingValue($setting_name)
     {
         $this->db->select('setting_value');
-        $query = $this->db->get_where($this->settingsTable, array('setting_name' => $setting_name));
+        $query = $this->db->get_where(SETTINGS_TABLE_NAME, array('setting_name' => $setting_name));
         return $query->row()->setting_value;
     }
 
-    public function getOffersTableToUpdate()
+    protected function getUpdateOffersTable()
     {
-       return $this->getSettingsTable('offersTableToUpdate');
+       return $this->getSettingValue('offersTableToUpdate');
     }
 
-    public function getOffersTableToRead()
+    protected function getReadOffersTable()
     {
-        return $this->getSettingsTable('offersTableToRead');
+        return $this->getSettingValue('offersTableToRead');
     }
     
-    public function getDatesForOffersTableToRead()
+    protected function getReadDatesForOffersTable()
     {
-        return $this->getSettingsTable('datesForOffersTableToRead');
+        return $this->getSettingValue('datesForOffersTableToRead');
     }
     
-    public function getDatesForOffersTableToUpdate()
+    protected function getUpdateDatesForOffersTable()
     {
-        return $this->getSettingsTable('datesForOffersTableToUpdate');
+        return $this->getSettingValue('datesForOffersTableToUpdate');
     }
 
-    public function getHotelsForOffersTableToRead()
+    protected function getReadHotelsForOffersTable()
     {
-        return $this->getSettingsTable('hotelsForOffersTableToRead');
+        return $this->getSettingValue('hotelsForOffersTableToRead');
     }
 
-    public function getHotelsForOffersTableToUpdate()
+    protected function getUpdateHotelsForOffersTable()
     {
-        return $this->getSettingsTable('hotelsForOffersTableToUpdate');
+        return $this->getSettingValue('hotelsForOffersTableToUpdate');
+    }
+
+    private $table;
+
+    public function getTableNames(){
+        $result = array();
+        $result['updateOffersTable'] = $this->getUpdateOffersTable();
+        $result['readOffersTable'] = $this->getReadOffersTable();
+        $result['updateDatesForOffersTable'] = $this->getUpdateDatesForOffersTable();
+        $result['readDatesForOffersTable'] = $this->getReadDatesForOffersTable();
+        $result['updateHotelsForOffersTable'] = $this->getUpdateHotelsForOffersTable();
+        $result['readHotelsForOffersTable'] = $this->getReadHotelsForOffersTable();
+        return $result;
+    }
+
+    private function initializeTableNames(){
+        $this->updateOffersTable = $this->getUpdateOffersTable();
+        $this->readOffersTable = $this->getReadOffersTable();
+        $this->updateDatesForOffersTable = $this->getUpdateDatesForOffersTable();
+        $this->readDatesForOffersTable = $this->getReadDatesForOffersTable();
+        $this->updateHotelsForOffersTable = $this->getUpdateHotelsForOffersTable();
+        $this->readHotelsForOffersTable = $this->getReadHotelsForOffersTable();
+    }
+
+    private function addLikeOperatorToQuery($likeOperatorValues){
+        if($arrayForLikeOperator != []){
+            $this->db->group_start();
+            foreach ($arrayForLikeOperator as $key => $value) {
+                $this->db->or_like($key, $value);
+            }
+            $this->db->group_end();
+        }
+    }
+
+    private function addSortToQuery($sortField, $sortOrder){
+        if($sortField != null){
+            if($sortOrder != null && in_array($sortOrder, array('ASC', 'DESC'))) {
+                $this->db->order_by($sortField, $sortOrder);
+            }else{
+                $this->db->order_by($sortField, 'asc');
+            }
+        }
     }
 }
 ?>

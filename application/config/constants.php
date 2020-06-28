@@ -139,6 +139,8 @@ defined('VALIDATION_ERROR_MESSAGE') OR define ('VALIDATION_ERROR_MESSAGE', 'Vali
 defined('USERNAME_TAKEN_MESSAGE') OR define ('USERNAME_TAKEN_MESSAGE', 'Username taken');
 defined('USER_NOT_FOUND') OR define ('USER_NOT_FOUND', 'User not found');
 defined('SESSION_EXPIRED_MESSAGE') OR define ('SESSION_EXPIRED_MESSAGE', 'Session expired');
+defined('LOGGED_OUT_MESSAGE') OR define ('LOGGED_OUT_MESSAGE', 'Logged out');
+defined('INVALID_USER_RIGHTS') OR define ('INVALID_USER_RIGHTS', 'No rights to perform operation');
 
 
 

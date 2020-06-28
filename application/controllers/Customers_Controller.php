@@ -74,8 +74,8 @@ class Customers_Controller extends Basic_Controller implements Customers_Control
     }
 
     private function isCompleteEmailConfigurationProvided($emailConfigData){
-        return ($this->checkIfPropertyIsSet($emailConfigData, "emailFrom") && $this->checkIfPropertyIsSet($emailConfigData, "senderName") &&
-                $this->checkIfPropertyIsSet($emailConfigData, "subject") && $this->checkIfPropertyIsSet($emailConfigData, "message"));
+        return ($this->isPropertyInArray($emailConfigData, "emailFrom") && $this->isPropertyInArray($emailConfigData, "senderName") &&
+                $this->isPropertyInArray($emailConfigData, "subject") && $this->isPropertyInArray($emailConfigData, "message"));
     }
 
     public function try(){
