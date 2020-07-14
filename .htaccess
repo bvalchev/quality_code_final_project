@@ -1,0 +1,18 @@
+RewriteEngine On
+
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit/1.1|Twitterbot|Pinterest|Google.*snippet)
+RewriteCond %{REQUEST_URI} ^/post/
+RewriteRule post/([0-9]*) https://aratour.bg/index.php/blogStatic?blog_id=$1 [L]
+
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit/1.1|Twitterbot|Pinterest|Google.*snippet)
+RewriteCond %{REQUEST_URI} ^/offer/
+RewriteRule offer/([0-9]*)/(.*) https://aratour.bg/index.php/offerStatic?data=$1_$2 [L]
+
+RewriteCond %{HTTP_USER_AGENT} !(facebookexternalhit/1.1|Twitterbot|Pinterest|Google.*snippet)
+RewriteCond %{REQUEST_FILENAME} !-f 
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.html [L]
+
+
+
+
