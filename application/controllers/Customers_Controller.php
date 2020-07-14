@@ -37,7 +37,7 @@ class Customers_Controller extends Basic_Controller
      */
     public function sendEmail()
     {
-        if(!parent::isDesiredMethodUsed('post')){
+        if(!$this->isDesiredMethodUsed('post')){
             return;
         };
        

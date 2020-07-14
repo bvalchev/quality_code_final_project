@@ -34,7 +34,7 @@ class Authentication_Controller extends Basic_Controller{
      */
     public function login($postParams = null){
         if(!$postParams){
-            if(!parent::isDesiredMethodUsed('post')){
+            if(!$this->isDesiredMethodUsed('post')){
                 return;
             };
             $postParams = file_get_contents('php://input', true);
@@ -45,7 +45,7 @@ class Authentication_Controller extends Basic_Controller{
         }
 
         $insertTupleData = json_decode($postParams);
-        $insertTupleData = parent::sanitizeInput($insertTupleData);
+        $insertTupleData = $this->sanitizeInput($insertTupleData);
         $username = $insertTupleData->username;
         $password =  $insertTupleData->password ;
 
@@ -83,7 +83,7 @@ class Authentication_Controller extends Basic_Controller{
         }
 
         if(!$dataObject){
-            if(!parent::isDesiredMethodUsed('post')){
+            if(!$this->isDesiredMethodUsed('post')){
                 return;
             }
             $dataObject = file_get_contents('php://input', true);
@@ -93,7 +93,7 @@ class Authentication_Controller extends Basic_Controller{
             return;
         }
         $insertTupleData = json_decode($dataObject);
-        $insertTupleData = parent::sanitizeInput($insertTupleData);
+        $insertTupleData = $this->sanitizeInput($insertTupleData);
         if(!$this->validateInput($insertTupleData)){
             return $this->echoJsonResponse(VALIDATION_ERROR_MESSAGE, BAD_REQUEST_ERROR_CODE);
         }
@@ -120,7 +120,7 @@ class Authentication_Controller extends Basic_Controller{
             return;
         }
         if(!$inputDataObject){
-            if(!parent::isDesiredMethodUsed('post')){
+            if(!$this->isDesiredMethodUsed('post')){
                 return;
             }
             $inputDataObject = file_get_contents('php://input', true);
@@ -130,7 +130,7 @@ class Authentication_Controller extends Basic_Controller{
             return;
         }
         $insertTupleData = json_decode($inputDataObject);
-        $sanitizedInputData = parent::sanitizeInput($insertTupleData);
+        $sanitizedInputData = $this->sanitizeInput($insertTupleData);
         $user = $this->Authentication_Model->getUser($sanitizedInputData->username);
         if(empty($user)){
             return $this->echoJsonResponse(USER_NOT_FOUND, BAD_REQUEST_ERROR_CODE);
@@ -216,7 +216,6 @@ class Authentication_Controller extends Basic_Controller{
             $this->session->sess_destroy();
         }
         return $this->echoJsonResponse(LOGGED_OUT_MESSAGE, SUCCESSFUL_REQUEST_CODE);
-
     }
 
     private function setUserSession($username, $userInfo){

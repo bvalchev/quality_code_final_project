@@ -25,14 +25,14 @@ class Authentication_Model extends Basic_Model{
 
     private $table = USER_TABLE_NAME;
     public function insertUser($data){
-        return parent::insert($this->table, $data);
+        return $this->insert($this->table, $data);
     }
     public function deleteUser($id)
     {
-        return parent::delete($this->table, $id);
+        return $this->delete($this->table, $id);
     }
     public function updateUser($rowId, $data){
-        return parent::update($this->table, $rowId, $data);
+        return $this->update($this->table, $rowId, $data);
     }
     public function isUsernameInUse($username){
         $query = $this->db->get_where($this->table, array('username'=>$username));

@@ -48,7 +48,7 @@ class Offer_Update_Model extends Basic_Model{
             $insertData = array();
             $insertData['TUROPERATOR_ID']= $singleTuroperatorInfo['TUROPERATOR_ID'];
             $insertData['name']= $singleTuroperatorInfo['TUROPERATOR'];
-            parent::insert(TUROPERATORS_TABLE_NAME, $insertData);
+            $this->insert(TUROPERATORS_TABLE_NAME, $insertData);
         }
     }
     
@@ -78,7 +78,7 @@ class Offer_Update_Model extends Basic_Model{
                 if(is_array($singleTuple)){
                     $hotelsDataToInsert =  $this->remapOrdinaryKeys($singleTuple, THIRD_PARTY_HOTEL_KEYS_MAP);
                     $hotelsDataToInsert['offer_pid '] = $pid;
-                    parent::insert($this->updateHotelsForOffersTable, $hotelsDataToInsert);
+                    $this->insert($this->updateHotelsForOffersTable, $hotelsDataToInsert);
                 }       
             }  
         }
@@ -142,7 +142,7 @@ class Offer_Update_Model extends Basic_Model{
         foreach($datesArray as $singleTuple)
         {
             $dataToInsert = $this->getDatesDataToInsert($pid, $singleTuple, $daysToAdd, $isHoliday, $isDatesJsonAvailable);
-            parent::insert($table, $dataToInsert);
+            $this->insert($table, $dataToInsert);
         }
     }
 
@@ -174,7 +174,7 @@ class Offer_Update_Model extends Basic_Model{
         {   
             $offerDetailsArray = $this->getAdditionalDetailsArray($fetchAdditionalDetails, $singleOffer["PID"], $offerDetailsEnpointName);
             $dataToInsert = $this->getOfferInsertData($singleOffer, $offerDetailsArray, $fetchAdditionalDetails, $isHoliday);
-            parent::insert($this->updateOffersTable, $dataToInsert);
+            $this->insert($this->updateOffersTable, $dataToInsert);
         }
     }
 
@@ -261,12 +261,12 @@ class Offer_Update_Model extends Basic_Model{
         $this->processAdditionalOfferData($detailsArray, $updateArray);
         
         if($updateArray != null && !empty($updateArray)){
-            parent::update($this->updateOffersTable, $offerBasicInfo['offer_id'], $updateArray, "offer_id");
+            $this->update($this->updateOffersTable, $offerBasicInfo['offer_id'], $updateArray, "offer_id");
         }
     }
 
     private function markAdditionalTablesUpdatedForOffer($offer_id){
-        parent::update($this->updateOffersTable, $offer_id, array('areAdditionalTablesUpdated'=> true), 'offer_id');
+        $this->update($this->updateOffersTable, $offer_id, array('areAdditionalTablesUpdated'=> true), 'offer_id');
     }
 
     private function getThirdPartyAccessInfo(){

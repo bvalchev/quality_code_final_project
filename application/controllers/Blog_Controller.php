@@ -97,7 +97,7 @@ class Blog_Controller extends Basic_Controller
      */
     public function uploadPicture(){
         if(!empty($_FILES[DEFAULT_UPLOAD_FILE_NAME]['name'])) {
-            $pictureName = parent::uploadFile($this->uploadPath, ALLOWED_FILE_TYPES, DEFAULT_UPLOAD_FILE_NAME);
+            $pictureName = $this->uploadFile($this->uploadPath, ALLOWED_FILE_TYPES, DEFAULT_UPLOAD_FILE_NAME);
             if($pictureName){
                 echo $this->uploadPath.$pictureName;
                 return;
@@ -172,7 +172,7 @@ class Blog_Controller extends Basic_Controller
 
         $postData = $this->getPostData($dataObject);
 
-        if(!parent::areAllKeysExisting($postData, BLOG_TABLE_NAME)){
+        if(!$this->areAllKeysExisting($postData, BLOG_TABLE_NAME)){
             return;
         }
         foreach ($this->keysForFileUpload as $value) {
@@ -206,7 +206,7 @@ class Blog_Controller extends Basic_Controller
      *      creation_date - {date} - The date of creation
      */
     private function updateBlogPost($updateTupleData){
-        return parent::executeUpdateOperation(array($this->Blog_Model, 'updateBlogPost'), $updateTupleData["blog_id"], $updateTupleData);
+        return $this->executeUpdateOperation(array($this->Blog_Model, 'updateBlogPost'), $updateTupleData["blog_id"], $updateTupleData);
     }
 
     /**
