@@ -59,9 +59,7 @@ class Offer_Update_Model extends Basic_Model{
         $turoperatorsArray = json_decode($turoperatorsJson, true);
         return $turoperatorsArray;
     }
-    
-   
-    
+     
     public function processAdditionalOfferData($rawData, &$remappedData){
         $remappedData['isDetailUpdated'] = true;
         if($rawData != null){
@@ -327,13 +325,13 @@ class Offer_Update_Model extends Basic_Model{
     private function getOfferInsertData($rawData, $detailsArray, $fetchAdditionalDetails, $isHoliday)
     {
         $remappedData = $this->remapOrdinaryKeys($rawData, THIRD_PARTY_BASIC_KEYS_MAP);
-        $remappedData = array_merge($remappedData, $this->remapImageKeys($rawData, THIRD_PARTY_BASIC_IMG_KEYS_MAP));
+        $remappedData = array_merge($remappedData, $this->remapImageKeys($rawData, THIRD_PARTY_BASIC_IMG_KEYS_REMAP));
         $remappedData['isHoliday'] = $isHoliday;
         $remappedData['isDetailUpdated'] = false;
         if($fetchAdditionalDetails){
             $this->processAdditionalOfferData($detailsArray, $dataToInsert);
         }
-        return $dataToInsert;
+        return $remappedData;
     }
 
     private function remapOrdinaryKeys($rawData, $map){
@@ -350,7 +348,7 @@ class Offer_Update_Model extends Basic_Model{
         $remappedData = array();
         foreach ($map as $key => $value){
             if(array_key_exists($key, $rawData)){
-                $dataToInsert[$value] = preg_replace("/^http:/i", "https:", $rawData[$value]);
+                $remappedData[$value] = preg_replace("/^http:/i", "https:", $rawData[$key]);
             }
         };
         return $remappedData;
@@ -360,7 +358,7 @@ class Offer_Update_Model extends Basic_Model{
         $remappedData = array();
         foreach ($map as $key => $value){
             if(array_key_exists($key, $rawData)){
-                $dataToInsert[$value] = json_encode($rawData[$value]);
+                $remappedData[$value] = json_encode($rawData[$key]);
             }
         };
         return $remappedData;

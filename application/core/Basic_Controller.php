@@ -62,9 +62,14 @@ class Basic_Controller extends CI_Controller
         return json_encode($responseArray);
 }
 
-    protected function isDesiredMethodUsed($methodType){
+    protected function isDesiredMethodUsed($desiredMethod, $methodType){
         $isDesiredMethodUsed = true;
-        if($this->input->method() != $methodType){
+        $methodToTest = $methodType;
+        if(!$methodToTest){
+            $methodToTest = $this->input->method();
+        }
+        
+        if($methodToTest != $desiredMethod){
             $this->echoJsonResponse(strtoupper($methodType).METHOD_CHECK_SUFFIX_MESSAGE, BAD_REQUEST_ERROR_CODE);
             $isDesiredMethodUsed = false;
         }
@@ -122,21 +127,21 @@ class Basic_Controller extends CI_Controller
     }
 
      protected function executeInsertOperation(callable $insertHandlerFunction, $parametersArray){
-        if (call_user_func_array ($insertHandlerFunction, $parametersArray)) {
-            $this->echoJsonResponse(INSERT_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
+        if (call_user_func ($insertHandlerFunction, $parametersArray)) {
+            return $this->echoJsonResponse(INSERT_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_CODE);
         }
         else{
-            $this->echoJsonResponse(INSERT_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
+            return $this->echoJsonResponse(INSERT_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
         } 
     }
 
     protected function executeUpdateOperation($updateHandlerFunction, $rowId, $updateTupleData){
         $parametersArray = array($rowId, $updateTupleData);
         if (call_user_func_array ($updateHandlerFunction, $parametersArray)) {
-            $this->echoJsonResponse(UPDATE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);        
+            return $this->echoJsonResponse(UPDATE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_CODE);        
         }
         else{
-            $this->echoJsonResponse(UPDATE_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
+            return $this->echoJsonResponse(UPDATE_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
         }
     }
 

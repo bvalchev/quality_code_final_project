@@ -7,6 +7,8 @@
  * Time: 20:48
  */
 
+require_once APPPATH.'libraries/QueryParameters.php';
+
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 
@@ -24,6 +26,7 @@ class Basic_Model extends CI_Model
      */
     public function __construct() {
         parent::__construct();
+       // $this->load->library('QueryParameters');
         $this->initializeTableNames();
     }
 
@@ -191,6 +194,7 @@ class Basic_Model extends CI_Model
     }
 
     private $table;
+    private $arrayForLikeOperator = array();
 
     public function getTableNames(){
         $result = array();
@@ -213,9 +217,9 @@ class Basic_Model extends CI_Model
     }
 
     private function addLikeOperatorToQuery($likeOperatorValues){
-        if($arrayForLikeOperator != []){
+        if($this->arrayForLikeOperator != []){
             $this->db->group_start();
-            foreach ($arrayForLikeOperator as $key => $value) {
+            foreach ($this->$arrayForLikeOperator as $key => $value) {
                 $this->db->or_like($key, $value);
             }
             $this->db->group_end();

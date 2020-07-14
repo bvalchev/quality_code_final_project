@@ -7,13 +7,7 @@
  * Time: 13:55
  */
 
-
-/**
- * Include the interface from the interface folder
- */
-require_once APPPATH.'interfaces/Customers_Controller_Interface.php';
-
-class Customers_Controller extends Basic_Controller implements Customers_Controller_Interface
+class Customers_Controller extends Basic_Controller
 {
     public function __construct()
     {
@@ -67,34 +61,14 @@ class Customers_Controller extends Basic_Controller implements Customers_Control
         $this->email->subject($emailConfigData['subject']);
         $this->email->message($emailConfigData['message']);
         if(!$this->email->send()){
-            $this->echoJsonResponse("Email sending failed", $this->badRequestErrorCode);
+            $this->echoJsonResponse("Email sending failed", BAD_REQUEST_ERROR_CODE);
             return;
         }
-        $this->echoJsonResponse("Email sent!", $this->successfulRequestCode);
+        $this->echoJsonResponse("Email sent!", SUCCESSFUL_REQUEST_CODE);
     }
 
     private function isCompleteEmailConfigurationProvided($emailConfigData){
         return ($this->isPropertyInArray($emailConfigData, "emailFrom") && $this->isPropertyInArray($emailConfigData, "senderName") &&
                 $this->isPropertyInArray($emailConfigData, "subject") && $this->isPropertyInArray($emailConfigData, "message"));
     }
-
-    public function try(){
-		$data = array();
-		$data['username'] = 'admin';
-		$data['password'] = 'admin';
-		$encodedData = json_encode($data);
-		$ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'http://tuni.terminalbulgaria.com/index.php/login');
-        curl_setopt($ch, CURLOPT_POST,1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $encodedData);
-		$result = curl_exec($ch);
-        if (curl_errno($ch)) {
-            $result = curl_error($ch);
-        }
-		curl_close ($ch);
-		var_dump($result);
-		die();
-	}
 }

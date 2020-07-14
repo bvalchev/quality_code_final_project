@@ -10,7 +10,6 @@
 /**
  * Include the interface from the interface folder
  */
-require_once APPPATH.'interfaces/Blog_Controller_Interface.php';
 
 
 /**
@@ -18,7 +17,7 @@ require_once APPPATH.'interfaces/Blog_Controller_Interface.php';
  * The following class inherits Basic_Controller class and is responsible for the handling of blog operations
  * @Author Boyan Valchev
  */
-class Blog_Controller extends Basic_Controller implements Blog_Controller_Interface
+class Blog_Controller extends Basic_Controller
 {
     public function __construct()
     {
@@ -75,13 +74,21 @@ class Blog_Controller extends Basic_Controller implements Blog_Controller_Interf
      *      The function consideres the following parameters from the request body
      *          blog_id {id_number} - The id for the blog post to delete  
      */
-    public function index(){
-        if($this->input->method() == 'get'){
-            $this->getBlogPosts();
-        }else if($this->input->method() == 'post'){
-            $this->handlePostMethod();
-        }else if($this->input->method() == 'delete'){
-            $this->deleteBlogPost();
+    public function index($method = null, $parameters = null){
+        $usedMethod = $method;
+        if($usedMethod == null){
+            $usedMethod = $this->input->method();
+            if(!$this->isSessionSet()){
+                return;
+            }
+        }
+
+        if(strtoupper($usedMethod) == 'GET'){
+            return $this->getBlogPosts();
+        }else if(strtoupper($usedMethod) == 'POST'){
+            return $this->handlePostMethod($parameters);
+        }else if(strtoupper($usedMethod) == "DELETE"){
+            return $this->deleteBlogPost($parameters);
         }
     }
 
@@ -130,51 +137,57 @@ class Blog_Controller extends Basic_Controller implements Blog_Controller_Interf
      * @return array of all desired blog posts
      * IMPORTANT - For security concerns all of the tags will be escaped!
      */
-    private function getBlogPosts(){
-        if(!parent::isDesiredMethodUsed('get')){
-            return;
-        };
-
+    private function getBlogPosts($method = null){
         if(!$this->areAllKeysExisting($_GET, BLOG_TABLE_NAME)){
             return;
-        }        
-        $query = $this->Blog_Model->executeGetOperation($this->keysForLikeOperatorInGetRequest);
-        if(!$query) {
+        }    
+         
+        $result = $this->Blog_Model->executeGetOperation($this->keysForLikeOperatorInGetRequest);
+        if(!$result) {
             $this->echoJsonResponse(ERROR_OCCURRED_MESSAGE, UNSUCCESSFUL_ERROR_CODE);
             return;
         }else{
-            return $this->convertArrayToJson($query);
+            echo $result;
+            return $result;
         }
     }
 
-    private function getPostData(){
-        $postData = $_POST;
-        $postData['creation_date'] = date('Y/m/d h:i:s a', time());
+    private function getPostData($postData){
+        if(!$this->isJson($postData)) {
+            return;
+        }
+        $decodedData = json_decode($postData, true);
+        $decodedData['creation_date'] = date('Y/m/d h:i:s a', time());
         if(USE_SESSION){
-            $postData['created_by'] =  $_SESSION['id'];
+            $decodedData['created_by'] =  $_SESSION['id'];
         }
+
+        return $decodedData;
     }
 
-    private function handlePostMethod(){
-	    if(!$this->isSessionSet() || !parent::areAllKeysExisting($postData, BLOG_TABLE_NAME)){
-           return;
+    private function handlePostMethod($dataObject = null){ 
+        if(!$dataObject){
+            $dataObject = file_get_contents('php://input');
         }
-        $dataObject = file_get_contents('php://input');
-        $postData = $this->getPostData();
 
+        $postData = $this->getPostData($dataObject);
+
+        if(!parent::areAllKeysExisting($postData, BLOG_TABLE_NAME)){
+            return;
+        }
         foreach ($this->keysForFileUpload as $value) {
             $this->uploadPicture();
         }
 
         if(isset($postData['blog_id'])){
-           $this->updateBlogPost($postData);
+           return $this->updateBlogPost($postData);
         }else{
-            $this->insertBlogPost($postData);
+            return $this->insertBlogPost($postData);
         }
     }
 
     private function insertBlogPost($insertTupleData){
-        $this->executeInsertOperation(array($this->Blog_Model, 'insertBlogPost'), $insertTupleData);
+        return $this->executeInsertOperation(array($this->Blog_Model, 'insertBlogPost'), $insertTupleData);
     }
 
     /**
@@ -193,7 +206,7 @@ class Blog_Controller extends Basic_Controller implements Blog_Controller_Interf
      *      creation_date - {date} - The date of creation
      */
     private function updateBlogPost($updateTupleData){
-        parent::executeUpdateOperation(array($this->Blog_Model, 'updateBlogPost'), $updateTupleData["blog_id"], $updateTupleData);
+        return parent::executeUpdateOperation(array($this->Blog_Model, 'updateBlogPost'), $updateTupleData["blog_id"], $updateTupleData);
     }
 
     /**
@@ -203,26 +216,25 @@ class Blog_Controller extends Basic_Controller implements Blog_Controller_Interf
      * The function consideres the following parameters from the request body
      *      blog_id {id_number} - The id for the blog post to delete
      */
-    private function deleteBlogPost(){
-        if(!$this->isSessionSet()){
-            return;
+    private function deleteBlogPost($parameters = null){
+        if(!$parameters){
+            $parameters = file_get_contents('php://input', true);
         }
-        $jsonObject = file_get_contents('php://input', true);
-        if($this->isJson($jsonObject)) {
-            $decodedData = json_decode($jsonObject, true);
+        if($this->isJson($parameters)) {
+            $decodedData = json_decode($parameters, true);
         }
 
         //Check if id is 
-        if(!parent::isPropertyInArray($decodedData , 'blog_id')){
-            return;
+        $isIdProvided = $this->isPropertyInArray($decodedData , 'blog_id');
+        if(!$isIdProvided){
+            return $isIdProvided;
         }
 
         if(!$this->Blog_Model->deleteBlogPostById($decodedData["blog_id"])){
-            $this->echoJsonResponse(DELETE_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(DELETE_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
+           
         }else{
-            $this->echoJsonResponse(DELETE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
-            return;
+            return $this->echoJsonResponse(DELETE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_CODE);
         }
     }
 }

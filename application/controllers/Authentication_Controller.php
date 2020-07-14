@@ -182,7 +182,7 @@ class Authentication_Controller extends Basic_Controller{
         if(!$this->Authentication_Model->deleteUserByName($userData['username'])){
             $message = DELETE_FAILED_MESSAGE;
         }
-        return $this->echoJsonResponse(DELETE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
+        return $this->echoJsonResponse(DELETE_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_CODE);
     }
 
     /**
@@ -214,8 +214,9 @@ class Authentication_Controller extends Basic_Controller{
             $data=array('id' => '', 'username' => '', 'position' => '', 'logged_in' => '');
             $this->session->unset_userdata($data);
             $this->session->sess_destroy();
-            return $this->echoJsonResponse(LOGGED_OUT_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
         }
+        return $this->echoJsonResponse(LOGGED_OUT_MESSAGE, SUCCESSFUL_REQUEST_CODE);
+
     }
 
     private function setUserSession($username, $userInfo){
@@ -309,7 +310,7 @@ class Authentication_Controller extends Basic_Controller{
             return $this->echoJsonResponse(INSERT_FAILED_MESSAGE, UNSUCCESSFUL_REQUEST_ERROR_CODE);
         }
         else{
-            return $this->echoJsonResponse(INSERT_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_ERROR_CODE);
+            return $this->echoJsonResponse(INSERT_SUCCESSFUL_MESSAGE, SUCCESSFUL_REQUEST_CODE);
         }
     }
 }

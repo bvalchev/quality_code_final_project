@@ -10,7 +10,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class QueryParameters {
-    public function __construct($rawData, $keysForLikeOperator, $isSpecialKeyFunction){
+    public function __construct($rawData, $keysForLikeOperator){
         $offset = DEFAULT_GET_REQUEST_OFFSET;
         $limit = DEFAULT_GET_REQUEST_LIMIT;
         $sortOrder = DEFAULT_GET_REQUEST_SORT_ORDER;
@@ -19,8 +19,6 @@ class QueryParameters {
         $this->requestParameters = array();
         $this->rawData = $rawData;
         $this->keysForLikeOperator = $keysForLikeOperator;
-        $this->isSpecialKeyFunction = $isSpecialKeyFunction;
-        $this->isUsingSpecialKeys = ($isSpecialKeyFunction != null);
         $this->build();
 
     }
@@ -31,10 +29,6 @@ class QueryParameters {
 
     public function setKeysForLikeOperator($keysForLikeOperator){
         $this->keysForLikeOperator = $keysForLikeOperator;
-    }
-
-    public function setIsSpecialKeyFunction($isSpecialKeyFunction){
-        $this->setIsSpecialKeyFunction = $isSpecialKeyFunction;
     }
 
     public function getOffset(){
@@ -70,8 +64,6 @@ class QueryParameters {
     private $sortOrder;
     private $sortField;
     private $rawData;
-    private $isUsingSpecialKeys;
-    private $isSpecialKeyFunction;
 
     private function build(){
         foreach ( $this->rawData as $key => $value ) {
@@ -85,12 +77,10 @@ class QueryParameters {
                 $this->sortOrder = $value;
             }else if(in_array($key, $this->keysForLikeOperator)) {
                 $this->likeOperatorValues[$key] = $value;
-            }else if($isUsingSpecialKeys){
-                if(call_user_func_array ($this->isSpecialKeyFunction, array($key))){
-                    $this->requestParameters[$key] = $value;
-                }
-            }else if($this->isParameterBooleanValue($this->requestParameters, $value)){
+            }else if($this->isParameterBooleanValue($value)){
                 $this->handleBooleanParameterValue($this->requestParameters, $value);
+            }else{
+                $this->requestParameters[$key] = $value;
             }
         }
     }

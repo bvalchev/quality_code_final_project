@@ -89,6 +89,7 @@ defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest auto
 | Custom defined constants for the application
 */
 
+/* Custom system info and details constants */
 defined('SETTINGS_TABLE_NAME') OR define ('SETTINGS_TABLE_NAME', 'settings');
 defined('BLOG_TABLE_NAME') OR define ('BLOG_TABLE_NAME', 'blog');
 defined('USER_TABLE_NAME') OR define ('USER_TABLE_NAME', 'user_login');
@@ -106,18 +107,21 @@ defined('HOLIDAYS_DETAIL_ENDPOINT') OR define ('HOLIDAYS_DETAIL_ENDPOINT', 'b2b_
 defined('EXCURSIONS_DETAIL_ENDOPOINT') OR define ('EXCURSIONS_DETAIL_ENDOPOINT', 'b2b_programa_ekskurzia.php');
 defined('EXCURSIONS_LIST') OR define ('EXCURSIONS_LIST', 'b2b_programi_list_ekskurzii.php');
 defined('HOLIDAYS_LIST') OR define ('HOLIDAYS_LIST', 'b2b_programi_list_pochivki.php');
+defined ('DEFAULT_GET_REQUEST_SORT_ORDER') OR define ('DEFAULT_GET_REQUEST_SORT_ORDER', 'Asc');
+defined('XML_SAVE_PATH') OR define ('XML_SAVE_PATH', '/file/path/name.xml');
 
+/* Custom numeric constants */
 defined('IS_PRODUCTION') OR define ('IS_PRODUCTION', false);
 defined('USE_SESSION') OR define ('USE_SESSION', false);
 defined('BAD_REQUEST_ERROR_CODE') OR define ('BAD_REQUEST_ERROR_CODE', 403);
 defined('UNSUCCESSFUL_REQUEST_ERROR_CODE') OR define ('UNSUCCESSFUL_REQUEST_ERROR_CODE', 404);
-defined('SUCCESSFUL_REQUEST_ERROR_CODE') OR define ('SUCCESSFUL_REQUEST_ERROR_CODE', 200);
+defined('SUCCESSFUL_REQUEST_CODE') OR define ('SUCCESSFUL_REQUEST_CODE', 200);
 defined('MAX_OFFERS_FOR_SINGLE_BATCH') OR define ('MAX_OFFERS_FOR_SINGLE_BATCH', 300);
 defined('DEFAULT_GET_REQUEST_OFFSET') OR define ('DEFAULT_GET_REQUEST_OFFSET', 0);
 defined('DEFAULT_GET_REQUEST_LIMIT') OR define ('DEFAULT_GET_REQUEST_LIMIT', 50);
 defined('DEFAULT_PID') OR define ('DEFAULT_PID', -1);
 
-
+/* Custom messages constants */
 defined('ERROR_OCCURRED_MESSAGE') OR define ('ERROR_OCCURRED_MESSAGE', 'Error ocurred');
 defined('METHOD_CHECK_SUFFIX_MESSAGE') OR define ('METHOD_CHECK_SUFFIX_MESSAGE', ' method should be used');
 defined('NOT_JSON_ERROR') OR define ('NOT_JSON_ERROR', 'Data must be in json format');
@@ -133,6 +137,7 @@ defined('FILE_UPLOAD_ERROR_MESSAGE') OR define ('FILE_UPLOAD_ERROR_MESSAGE', 'Fi
 defined('SESSION_NOT_SET_MESSAGE') OR define ('SESSION_NOT_SET_MESSAGE', 'Session not set');
 defined('PID_NOT_PROVIDED_MESSAGE') OR define ('PID_NOT_PROVIDED_MESSAGE', 'Pid not provided');
 defined('HOTELID_NOT_PROVIDED_MESSAGE') OR define ('HOTELID_NOT_PROVIDED_MESSAGE', 'Hotel ID is not provided');
+defined('OFFERID_NOT_PROVIDED_MESSAGE') OR define ('OFFERID_NOT_PROVIDED_MESSAGE', 'Offer ID is not provided');
 defined('USER_NOT_FOUND_MESSAGE') OR define ('USER_NOT_FOUND_MESSAGE', 'User not found');
 defined('INVALID_PASSWORD_MESSAGE') OR define ('INVALID_PASSWORD_MESSAGE', 'Invalid password');
 defined('VALIDATION_ERROR_MESSAGE') OR define ('VALIDATION_ERROR_MESSAGE', 'Validation of input failed');
@@ -142,11 +147,8 @@ defined('SESSION_EXPIRED_MESSAGE') OR define ('SESSION_EXPIRED_MESSAGE', 'Sessio
 defined('LOGGED_OUT_MESSAGE') OR define ('LOGGED_OUT_MESSAGE', 'Logged out');
 defined('INVALID_USER_RIGHTS') OR define ('INVALID_USER_RIGHTS', 'No rights to perform operation');
 
-
-
-defined('XML_SAVE_PATH') OR define ('XML_SAVE_PATH', '/file/path/name.xml');
-
-defined('THIRD_PARTY_BASIC_KEYS_MAP') OR define ('THIRD_PARTY_INTEGRATION_MAP', array(
+/* Custom structure constants */
+defined('THIRD_PARTY_BASIC_KEYS_MAP') OR define ('THIRD_PARTY_BASIC_KEYS_MAP', array(
 	'PID' => 'pid',
 	'TUROPERATOR_ID' => 'turoperator_id',
 	'TUROPERATOR' => 'turoperator_name',
@@ -159,7 +161,7 @@ defined('THIRD_PARTY_BASIC_KEYS_MAP') OR define ('THIRD_PARTY_INTEGRATION_MAP', 
 	'broj_noshtuvki' => 'number_of_nights'
 ));
 
-defined('THIRD_PARTY_BASIC_IMG_KEYS_MAP') OR define ('THIRD_PARTY_BASIC_IMG_KEYS_REMAP', array(
+defined('THIRD_PARTY_BASIC_IMG_KEYS_REMAP') OR define ('THIRD_PARTY_BASIC_IMG_KEYS_REMAP', array(
 	'IMG' => 'main_image', 
 	'BIG_IMG' => 'main_image_big'
 ));

@@ -23,7 +23,7 @@ class Authentication_Model extends Basic_Model{
         parent::__construct();
     }
 
-    private $table = 'user_login';
+    private $table = USER_TABLE_NAME;
     public function insertUser($data){
         return parent::insert($this->table, $data);
     }
@@ -49,7 +49,6 @@ class Authentication_Model extends Basic_Model{
             }
         }
         return $arr;
-        //return $json = json_encode($arr, JSON_UNESCAPED_UNICODE);
     }
     public function getUser($username){
         $query = $this->db->get_where($this->table, array('username'=>$username));
@@ -61,7 +60,6 @@ class Authentication_Model extends Basic_Model{
             }
         }
         return $arr;
-        //return $json = json_encode($arr, JSON_UNESCAPED_UNICODE);
     }
     public function deleteUserByName($username){
         $this->db->delete($this->table, array('username' => $username));

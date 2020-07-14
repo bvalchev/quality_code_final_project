@@ -12,12 +12,11 @@ class Offer_Update_Controller extends Basic_Controller
     public function __construct()
     {
         parent::__construct();
-        ini_set('max_execution_time', 6000);
         $this->load->model('Offer_Update_Model');
     }
 
     public function updateTuroperators(){
-        $this->Offer_Update_Model->fillTuroperatorsTable();
+        $this->Offer_Update_Model->updateTuroperatorsTable();
     }
     public function basicRunUpdate(){
         $this->Offer_Update_Model->updateAction(false);
@@ -27,7 +26,6 @@ class Offer_Update_Controller extends Basic_Controller
     }
 
     public function updateDatesAndHotels(){
-        set_time_limit(0);
         $this->Offer_Update_Model->updateAdditionalTables();
     }
 

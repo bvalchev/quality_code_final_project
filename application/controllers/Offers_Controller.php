@@ -7,40 +7,22 @@
  * Time: 13:55
  */
 
- /**
- * Include the interface from the interface folder
- */
-require_once APPPATH.'interfaces/Offers_Controller_Interface.php';
-
 /**
  * Class Offers_Controller
  * The following class inherits Basic_Controller class and is responsible for the handling of offers operations
  * @Author Boyan Valchev
  */
 
-class Offers_Controller extends Basic_Controller implements Offers_Controller_Interface
+class Offers_Controller extends Basic_Controller
 {
     public function __construct()
     {
         parent::__construct();
         $this->load->library('email');
-	$this->load->helper('url');
+	    $this->load->helper('url');
         $this->load->model('Offers_Model');
     }
     private $keysForLikeOperatorInGetRequest = array();
-
-    /**
-     * The following function checks if the key should be considered for the offers filtering
-     * The function is not supposed to be called from the api. Thats why it is not routed.
-     * @param $key - string - The current key to be checked
-     * @return bool - true if the key is special
-     */
-    public function isSpecialKey($key){
-        return (($key == 'startDate') || ($key == 'endDate') || ($key == 'maxPrice') || ($key == 'minPrice') || 
-                ($key == 'countries') ||($key == 'cities') || ($key == 'afterDate') || ($key == 'beforeDate') || 
-                ($key == 'isHoliday') || ($key == 'isExotic') || ($key == 'isEarly') || ($key == 'getNewest') ||
-                ($key == 'transport'));
-    }
 
     /**
      * The following function is responsible for getting offers from the server
@@ -64,16 +46,24 @@ class Offers_Controller extends Basic_Controller implements Offers_Controller_In
      *      sortOrder - Expects ASC or DESC depending on the way the items to be sorted
      * @return - JSON object, containing all of the offers that match the filtering parameters
      */
-    public function getOffers(){
-        //if(!isset($_SESSION['id']) && $this->useSession){
-        //    $this->echoJsonResponse("Session not set", $this->unsuccessfulRequestErrorCode);
-        //    return;
-        //}
-        if(!parent::isDesiredMethodUsed('get')){
-            return;
+    public function getOffers($parameters = null, $method = null){
+        if(!$this->isDesiredMethodUsed('get', $method)){
+            return false;
         };
-        
-        echo parent::basicGetOperation(array($this->Offers_Model, 'getOperation'),  $this->keysForLikeOperatorInGetRequest, $this->offersTableToUpdate, array($this, 'isSpecialKey'), true);
+
+        $getParameters = $parameters;
+        if(!$getParameters){
+            $getParameters = $_GET;
+        }
+    
+        // if(!$this->areAllKeysExisting($getParameters, $this->updateOffersTable)){
+        //     return;
+        // }        
+        if(!$method){
+            echo $this->Offers_Model->executeGetOperation($getParameters, $this->keysForLikeOperatorInGetRequest);
+        }else{
+            return $this->Offers_Model->executeGetOperation($getParameters, $this->keysForLikeOperatorInGetRequest);
+        }
     }
     /**
      * The following function gets additional details for offer.
@@ -92,53 +82,42 @@ class Offers_Controller extends Basic_Controller implements Offers_Controller_In
      * Example: baseurl/index.php/Offers_Controller/getDetailsForOffer?pid=25&isHoliday=true
      * @return echos the data as JSON;
      */
-    public function getDetailsForOffer(){
-        //if(!isset($_SESSION['id']) && $this->useSession){
-        //   $this->echoJsonResponse("Session not set", $this->unsuccessfulRequestErrorCode);
-        //    return;
-        //}
-        $pid = -1;
-        $isHoliday = false;
-        if(array_key_exists('pid', $_GET))
-        {
-            $pid = $_GET['pid'];
+    public function getDetailsForOffer($method = null){
+        if(!$this->isDesiredMethodUsed('get', $method)){
+            return false;
+        };
+        if(!$this->isIdentificatorProvided($_GET)){
+            return false;
         }
-        if($pid == -1){
-            $this->echoJsonResponse("Pid not provided", $this->badRequestErrorCode);
-            return;
-        }
-
-        if(!array_key_exists('isHoliday', $_GET)){
-            $this->echoJsonResponse("isHoliday is not provided", $this->badRequestErrorCode);
-            return;
-        }else{
-            if($_GET['isHoliday']== 'true'){
-                $isHoliday = true;
-            }else if($_GET['isHoliday']== 'false'){
-                $isHoliday = false;
-            }
-        }
+        $pid = $_GET['pid'];
+        $isHoliday = $this->shouldSearchForHoliday($_GET);
         $fullData = $this->Offers_Model->getDetailsForOffer($pid, $isHoliday);
-        echo $fullData;
+        if(!$method){
+            echo $fullData;
+        }else{
+            return $fullData;
+        }
     }
 
-    public function getDistinctOfferCountries(){
-        echo $this->Offers_Model->getDistinctOfferCountries();
+    public function getDistinctOfferCountries($method = null){
+        if(!$this->isDesiredMethodUsed('get', $method)){
+            return false;
+        };
+        if(!$method){
+            echo $this->Offers_Model->getDistinctOfferCountries();
+        }else{
+            return $this->Offers_Model->getDistinctOfferCountries();
+        }
     }
 
     public function getStaticOfferView(){
-	$separatedArrays = explode('_', $_GET['data']);
-	$pid = $separatedArrays[0];
-	$isHolidayString = $separatedArrays[1];
-        if($isHolidayString== 'true'){
-            $isHoliday = true;
-        }else if($sHolidayString== 'false'){
-            $isHoliday = false;
-        }
-        
+        $separatedArrays = explode('_', $_GET['data']);
+        $pid = $separatedArrays[0];
+        $isHoliday = (strtoupper($separatedArrays[1]) === 'FALSE');    
         $dataArray = json_decode($this->Offers_Model->getDetailsForOffer($pid, $isHoliday), true)[0];
         $this->load->view('staticView', $dataArray);
     }
+
 
      /**
      * The following function gets additional details for hotel.
@@ -147,31 +126,55 @@ class Offers_Controller extends Basic_Controller implements Offers_Controller_In
      * @return echos the data as JSON;
      */
     public function getHotelInfo(){
-        $pid = -1;
-        if(array_key_exists('pid', $_GET)){
-            $pid = $_GET['pid'];
-        }else{
-            $this->echoJsonResponse("Pid not provided", $this->badRequestErrorCode);
+        if(!$this->isIdentificatorProvided($_GET) || !$this->isHotelIdProvided($_GET)){
             return;
         }
-
-        $hotelId = -1;
-        if(array_key_exists('hotelId', $_GET)){
-            $hotelId = $_GET['hotelId'];
-        }else{
-            $this->echoJsonResponse("Hotel ID is not provided", $this->badRequestErrorCode);
-            return;
-        }
-
-        
-        $getHotelInfoUrl = "http://json.peakview.bg/b2b_programa_hotel.php?" .
-                            "PID=" . 
-                            $pid  . 
-                            "&H=" .
-                            $hotelId .
-                            "&us=e35232bd48c2e3e80eee63ebb0aee9a7o40Qjze9Ri&ps=JBPmBtdkFZxPW72e35232bd48c2e3e80eee63ebb0aee9a7";
+        $pid = $_GET['pid'];
+        $hotelId = $_GET['hotelId'];
+        $getHotelInfoUrl = $this->getHotelInfoUrl($pid, $hotelId);
         $offerInfoJson = file_get_contents($getHotelInfoUrl);
         $offerInfoArray = json_decode($offerInfoJson, true);
         echo json_encode($offerInfoArray[0]['hotelinfo'], JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+    }
+
+    private function getIdentificator($parameters){
+        $isIdentificatorExisting = array_key_exists('pid', $parameters);
+        if(!$isIdentificatorExisting){
+            $this->echoJsonResponse(PID_NOT_PROVIDED_MESSAGE, BAD_REQUEST_ERROR_CODE);
+        }
+        return $isIdentificatorExisting;
+    }
+
+    private function shouldSearchForHoliday($parameters){
+        $result = true;
+        if( !array_key_exists('isHoliday', $parameters) || strtoupper($parameters) == 'FALSE'){
+            $result = false;
+        }
+        return $result;
+    }
+
+    private function isHotelIdProvided($parameters){
+        $isHotelIdProvided = array_key_exists('hotelId', $parameters);
+        if(!$isHotelIdProvided){
+            $this->echoJsonResponse(HOTELID_NOT_PROVIDED_MESSAGE, BAD_REQUEST_ERROR_CODE);
+        }
+        return $isHotelIdProvided;
+    }
+
+    private function isIdentificatorProvided($parameters){
+        $isPidProvided = array_key_exists('pid', $parameters);
+        if(!$isPidProvided){
+            $this->echoJsonResponse(PID_NOT_PROVIDED_MESSAGE, BAD_REQUEST_ERROR_CODE);
+        }
+        return $isPidProvided;
+    }
+
+    private function getHotelInfoUrl($pid, $hotelId){
+        return HOTEL_INFO_ENDPOINT .
+            "PID=" . 
+            $pid  . 
+            "&H=" .
+            $hotelId .
+            AUTHENTICATION_KEY;
     }
 }
