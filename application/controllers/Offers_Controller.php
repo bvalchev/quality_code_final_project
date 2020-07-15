@@ -91,11 +91,11 @@ class Offers_Controller extends Basic_Controller
         }
         $pid = $_GET['pid'];
         $isHoliday = $this->shouldSearchForHoliday($_GET);
-        $fullData = $this->Offers_Model->getDetailsForOffer($pid, $isHoliday);
+        $offerFullData = $this->Offers_Model->getDetailsForOffer($pid, $isHoliday);
         if(!$method){
-            echo $fullData;
+            echo $offerFullData;
         }else{
-            return $fullData;
+            return $offerFullData;
         }
     }
 

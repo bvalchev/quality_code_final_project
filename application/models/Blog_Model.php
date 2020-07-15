@@ -18,7 +18,7 @@ class Blog_Model extends Basic_Model{
         parent::__construct();
     }
 
-    private $table = 'blog';
+    private $table = BLOG_TABLE_NAME;
 
     public function insertBlogPost($data){
         return $this->insert($this->table, $data);

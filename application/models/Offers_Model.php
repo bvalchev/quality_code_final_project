@@ -45,7 +45,6 @@ class Offers_Model extends Basic_Model{
         $this->handleIsExoticFlag($filterDataAsArray);
         $this->handleDateFiltration($filterDataAsArray, $limit, $offset);
         $this->applySorting($sortField, $sortOrder, $filterDataAsArray);
-        
         $this->db->limit($limit, $offset);
         $query=$this->db->get();
         return $this->convertArrayToJson($query);
@@ -87,9 +86,10 @@ class Offers_Model extends Basic_Model{
         'Нидерландия', 'Швейцария', 'Молдова', 'Белгия', 'Албания', 'Северна Македония', 'Македония',
         'Турция', 'Словения', 'Черна гора', 'Кипър', 'Люксембург', 'Андора', 'Малта', 'Лихтенщайн', 
         'Сан Марино', 'Монако', 'Ватикан');
+
     private $specialDates = array('23-12-2020', '24-12-2020', '25-12-2020', '26-12-2020',  '31-12-2020', '01-01-2021', '18-04-2020');
 
-    private function getDatesFiltratedOfferPids($filterDataAsArray, $limit, $offset){
+    private function getFiltratedOfferPidsByDate($filterDataAsArray, $limit, $offset){
         $this->db->select('DISTINCT `offer_pid`', FALSE);
         $this->db->from($this->readDatesForOffersTable);
         $this->handleStartDateValue($filterDataAsArray);
@@ -251,7 +251,7 @@ class Offers_Model extends Basic_Model{
 
     private function handleDateFiltration($filterDataAsArray, $limit, $offset){
         if($this->isDateFiltrationUsed($filterDataAsArray)){
-            $filtratedOfferPids = $this->getDatesFiltratedOfferPids($filterDataAsArray, $limit, $offset);
+            $filtratedOfferPids = $this->getFiltratedOfferPidsByDate($filterDataAsArray, $limit, $offset);
             if(empty($filtratedOfferPids)){
                 $this->db->where('pid', -1);
             }else{

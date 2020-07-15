@@ -7,23 +7,13 @@
  * Time: 13:55
  */
 
-class Customers_Controller extends Basic_Controller
+class Email_Controller extends Basic_Controller
 {
     public function __construct()
     {
         parent::__construct();
         $this->load->library('email');
     }
-
-    private $emailTo = "office@aratour.bg";
-
-    // public function setDefaultMethod($emailFrom){
-    //     $headers = "From: valchev.boian@gmail.com \r\n".
-    //                 "Reply-To: valchev.boian@gmail.com \r\n" .
-    //                 'X-Mailer: PHP/' . phpversion();
-    //                 @mail('valchev.boyan3@gmail.com', 'Test',  'Test', $headers);  
-    //                 echo '<div>GJ</div>';
-    // }
 
     /**
      * The following function is responsible for sending emails
@@ -53,18 +43,15 @@ class Customers_Controller extends Basic_Controller
             return;
         }
 
-        //if(!$this->isValidEmail($emailConfigData['emailFrom'])){
-        //    return;
-        //}
         $this->email->from($emailConfigData['emailFrom'], $emailConfigData['senderName']);
-        $this->email->to($this->emailTo);
+        $this->email->to(COMPANY_EMAIL_ADDRESS);
         $this->email->subject($emailConfigData['subject']);
         $this->email->message($emailConfigData['message']);
         if(!$this->email->send()){
-            $this->echoJsonResponse("Email sending failed", BAD_REQUEST_ERROR_CODE);
+            $this->echoJsonResponse(EMAIL_ERROR_MESSAGE, BAD_REQUEST_ERROR_CODE);
             return;
         }
-        $this->echoJsonResponse("Email sent!", SUCCESSFUL_REQUEST_CODE);
+        $this->echoJsonResponse(EMAIL_SENT_MESSAGE, SUCCESSFUL_REQUEST_CODE);
     }
 
     private function isCompleteEmailConfigurationProvided($emailConfigData){

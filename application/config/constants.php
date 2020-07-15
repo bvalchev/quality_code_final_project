@@ -109,6 +109,7 @@ defined('EXCURSIONS_LIST') OR define ('EXCURSIONS_LIST', 'b2b_programi_list_eksk
 defined('HOLIDAYS_LIST') OR define ('HOLIDAYS_LIST', 'b2b_programi_list_pochivki.php');
 defined ('DEFAULT_GET_REQUEST_SORT_ORDER') OR define ('DEFAULT_GET_REQUEST_SORT_ORDER', 'Asc');
 defined('XML_SAVE_PATH') OR define ('XML_SAVE_PATH', '/file/path/name.xml');
+defined('COMPANY_EMAIL_ADDRESS') OR define('COMPANY_EMAIL_ADDRESS', 'office@aratour.bg');
 
 /* Custom numeric constants */
 defined('IS_PRODUCTION') OR define ('IS_PRODUCTION', false);
@@ -146,6 +147,8 @@ defined('USER_NOT_FOUND') OR define ('USER_NOT_FOUND', 'User not found');
 defined('SESSION_EXPIRED_MESSAGE') OR define ('SESSION_EXPIRED_MESSAGE', 'Session expired');
 defined('LOGGED_OUT_MESSAGE') OR define ('LOGGED_OUT_MESSAGE', 'Logged out');
 defined('INVALID_USER_RIGHTS') OR define ('INVALID_USER_RIGHTS', 'No rights to perform operation');
+defined('EMAIL_ERROR_MESSAGE') OR define ('EMAIL_ERROR_MESSAGE', 'Email sending failed');
+defined('EMAIL_SENT_MESSAGE') OR define ('EMAIL_SENT_MESSAGE', 'Email sent!');
 
 /* Custom structure constants */
 defined('THIRD_PARTY_BASIC_KEYS_MAP') OR define ('THIRD_PARTY_BASIC_KEYS_MAP', array(

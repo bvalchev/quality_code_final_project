@@ -115,10 +115,10 @@ class Blog_Controller extends Basic_Controller
         $query = $this->db->select('blog_post_heading, blog_main_pic')
              ->where('blog_id', $_GET['blog_id'])
              ->get(BLOG_TABLE_NAME);
-     $dataArray = $query->result_array()[0];
-     $dataArray['title'] = $dataArray['blog_post_heading'];
-     $dataArray['main_image'] = $dataArray['blog_main_pic'];
-     $this->load->view('staticView', $dataArray);
+     $resultArray = $query->result_array()[0];
+     $resultArray['title'] = $resultArray['blog_post_heading'];
+     $resultArray['main_image'] = $resultArray['blog_main_pic'];
+     $this->load->view('staticView', $resultArray);
  }
     
     private $keysForLikeOperatorInGetRequest = array('name', 'email');
@@ -165,16 +165,16 @@ class Blog_Controller extends Basic_Controller
         return $decodedData;
     }
 
-    private function handlePostMethod($dataObject = null){ 
-        if(!$dataObject){
-            $dataObject = file_get_contents('php://input');
+    private function handlePostMethod($parameters = null){ 
+        if(!$parameters){
+            $parameters = file_get_contents('php://input');
         }
-
-        $postData = $this->getPostData($dataObject);
+        $postData = $this->getPostData($parameters);
 
         if(!$this->areAllKeysExisting($postData, BLOG_TABLE_NAME)){
             return;
         }
+
         foreach ($this->keysForFileUpload as $value) {
             $this->uploadPicture();
         }
